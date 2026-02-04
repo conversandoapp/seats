@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graduación - Ubicación de Asientos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #ff7b5f 0%, #ff6b54 50%, #e8604c 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 8px;
+            padding: 50px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+            max-width: 1400px;
+            width: 100%;
+            animation: fadeIn 0.5s;
+            border: 3px solid #ff6b54;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Pantalla de Bienvenida */
+        .welcome-screen {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .welcome-screen h1 {
+            font-size: 3.2em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'Georgia', serif;
+        }
+
+        .welcome-screen .subtitle {
+            font-size: 1.4em;
+            color: #555;
+            margin-bottom: 50px;
+            font-style: italic;
+            font-weight: 300;
+        }
+
+        .graduation-icon {
+            font-size: 100px;
+            margin-bottom: 30px;
+            filter: drop-shadow(0 4px 6px rgba(255, 107, 84, 0.3));
+        }
+
+        .university-logo {
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            color: #ff6b54;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .input-section {
+            background: #ffffff;
+            padding: 50px;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            max-width: 550px;
+            margin: 0 auto;
+            border: 2px solid #e8e8e8;
+        }
+
+        .input-section label {
+            display: block;
+            font-size: 1.1em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-family: 'Arial', sans-serif;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 18px 25px;
+            font-size: 1.1em;
+            border: 2px solid #ff6b54;
+            border-radius: 4px;
+            text-transform: lowercase;
+            text-align: center;
+            margin-bottom: 25px;
+            font-family: 'Courier New', monospace;
+            background: #fafafa;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #e8604c;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(255, 107, 84, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 18px 35px;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, #ff6b54 0%, #e8604c 100%);
+            color: #ffffff;
+            border: 2px solid #ff6b54;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-family: 'Arial', sans-serif;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #ff8873 0%, #ff6b54 100%);
+            color: #ffffff;
+            border-color: #e8604c;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 84, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: #ff6b54;
+            border: 2px solid #ff6b54;
+            margin-top: 20px;
+        }
+
+        .btn-secondary:hover {
+            background: #ff6b54;
+            color: #ffffff;
+            border-color: #e8604c;
+            box-shadow: 0 8px 20px rgba(255, 107, 84, 0.4);
+        }
+
+        .error-message {
+            color: #c41e3a;
+            text-align: center;
+            margin-top: 20px;
+            font-weight: 500;
+            font-size: 1em;
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Pantalla de Asiento */
+        .seating-screen {
+            display: none;
+        }
+
+        .seating-screen.active {
+            display: block;
+        }
+
+        .welcome-screen.hidden {
+            display: none;
+        }
+
+        .student-info {
+            background: linear-gradient(135deg, #ff6b54 0%, #e8604c 100%);
+            color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 40px;
+            border: 2px solid #e8604c;
+            box-shadow: 0 10px 30px rgba(255, 107, 84, 0.3);
+        }
+
+        .student-info h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 400;
+            color: #ffffff;
+            font-family: 'Georgia', serif;
+        }
+
+        .student-info .seat-assignment {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 25px 0;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
+            color: #ffffff;
+            font-family: 'Georgia', serif;
+            letter-spacing: 3px;
+        }
+
+        .student-info p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            font-family: 'Arial', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2em;
+            font-family: 'Georgia', serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .stage {
+            background: linear-gradient(to bottom, #2c3e50, #34495e);
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 40px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 22px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid #ff6b54;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .theater-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            position: relative;
+        }
+
+        .row-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .row-label {
+            font-weight: 600;
+            font-size: 18px;
+            color: #2c3e50;
+            width: 30px;
+            text-align: right;
+            font-family: 'Georgia', serif;
+        }
+
+        .row {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+
+        .section {
+            display: flex;
+            gap: 6px;
+            padding: 5px;
+            background: rgba(255, 107, 84, 0.08);
+            border-radius: 4px;
+        }
+
+        .seat {
+            width: 30px;
+            height: 30px;
+            background: #f5f5f5;
+            border: 2px solid #8b7355;
+            border-radius: 6px 6px 2px 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .seat::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
+            background: #8b7355;
+            border-radius: 0 0 2px 2px;
+        }
+
+        .seat:hover {
+            background: #e8e8e8;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(255, 107, 84, 0.3);
+            border-color: #ff6b54;
+        }
+
+        .seat.selected {
+            background: #c41e3a;
+            border-color: #8b0000;
+            animation: pulse 0.5s;
+            box-shadow: 0 4px 12px rgba(196, 30, 58, 0.5);
+        }
+
+        .seat.selected::after {
+            background: #8b0000;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            padding: 25px;
+            background: #ffffff;
+            border-radius: 4px;
+            border: 2px solid #e8e8e8;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-family: 'Arial', sans-serif;
+            color: #2c3e50;
+        }
+
+        .legend-seat {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px 6px 2px 2px;
+            border: 2px solid;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .legend-available {
+            background: #f5f5f5;
+            border-color: #8b7355;
+        }
+
+        .legend-selected {
+            background: #c41e3a;
+            border-color: #8b0000;
+        }
+
+        .back-button-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .back-button-container button {
+            width: auto;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Pantalla de Bienvenida -->
+        <div class="welcome-screen" id="welcomeScreen">
+            <div class="university-logo">CEREMONIA DE GRADUACIÓN 2025</div>
+            <div class="graduation-icon">🎓</div>
+            <h1>Bienvenido a tu Graduación</h1>
+            <p class="subtitle">Por favor indícanos tu código de alumno para ubicarte</p>
+            
+            <div class="input-section">
+                <label for="studentCode">Código de Alumno:</label>
+                <input 
+                    type="text" 
+                    id="studentCode" 
+                    placeholder="Ej: u200910086"
+                    maxlength="10">
+                <button onclick="findSeat()">Buscar mi Asiento</button>
+                <div id="errorMessage"></div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Asiento -->
+        <div class="seating-screen" id="seatingScreen">
+            <div class="back-button-container">
+                <button class="btn-secondary" onclick="goBack()">← Volver</button>
+            </div>
+
+            <div class="student-info" id="studentInfo">
+                <h2>¡Felicidades, <span id="studentName"></span>!</h2>
+                <p style="font-size: 1.1em; margin-bottom: 10px;">Tu asiento asignado es:</p>
+                <div class="seat-assignment" id="seatAssignment"></div>
+                <p id="studentCodeDisplay"></p>
+            </div>
+
+            <div class="stage">ESCENARIO</div>
+
+            <div class="theater-layout" id="theaterLayout"></div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-seat legend-available"></div>
+                    <span>Asiento disponible</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-seat legend-selected"></div>
+                    <span>Tu asiento</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base de datos de códigos de alumno, nombres y asientos asignados
+        const studentDatabase = {
+            'u200910086': { name: 'Juan Carrasco', seat: 'A4' },
+            'u200910025': { name: 'Sergio Acuña', seat: 'B7' },
+            'u200910101': { name: 'María González', seat: 'A12' },
+            'u200910102': { name: 'Carlos Mendoza', seat: 'C5' },
+            'u200910103': { name: 'Ana Rodríguez', seat: 'D15' },
+            'u200910104': { name: 'Pedro Sánchez', seat: 'E8' },
+            'u200910105': { name: 'Laura Martínez', seat: 'F20' },
+            'u200910106': { name: 'Diego Fernández', seat: 'G3' },
+            'u200910107': { name: 'Sofía Torres', seat: 'H18' },
+            'u200910108': { name: 'Miguel Ramírez', seat: 'I11' },
+            'u200910109': { name: 'Valentina Cruz', seat: 'J6' },
+            'u200910110': { name: 'Javier López', seat: 'K14' },
+            'u200910111': { name: 'Camila Vargas', seat: 'L9' },
+            'u200910112': { name: 'Roberto Castillo', seat: 'M2' },
+            'u200910113': { name: 'Isabella Morales', seat: 'N16' },
+            'u200910114': { name: 'Fernando Gutiérrez', seat: 'A25' },
+            'u200910115': { name: 'Daniela Rojas', seat: 'B19' },
+            'u200910116': { name: 'Andrés Herrera', seat: 'C22' },
+            'u200910117': { name: 'Gabriela Peña', seat: 'D10' },
+            'u200910118': { name: 'Ricardo Flores', seat: 'E28' }
+        };
+
+        // Configuración del teatro: 14 filas (A-N)
+        const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
+        
+        // Configuración de asientos por sección en cada fila
+        const seatingConfig = [
+            [6, 14, 8],   // Fila A
+            [7, 14, 8],   // Fila B
+            [7, 14, 8],   // Fila C
+            [8, 14, 8],   // Fila D
+            [8, 14, 8],   // Fila E
+            [8, 14, 8],   // Fila F
+            [8, 14, 8],   // Fila G
+            [8, 14, 8],   // Fila H
+            [8, 14, 8],   // Fila I
+            [8, 13, 8],   // Fila J
+            [8, 13, 8],   // Fila K
+            [7, 11, 7],   // Fila L
+            [6, 10, 6],   // Fila M
+            [6, 10, 6]    // Fila N
+        ];
+
+        // Crear el layout del teatro
+        function createTheaterLayout() {
+            const layout = document.getElementById('theaterLayout');
+            layout.innerHTML = '';
+            
+            rows.forEach((row, rowIndex) => {
+                const rowContainer = document.createElement('div');
+                rowContainer.className = 'row-container';
+                
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'row-label';
+                rowLabel.textContent = row;
+                rowContainer.appendChild(rowLabel);
+                
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                
+                const config = seatingConfig[rowIndex];
+                let seatNumber = 1;
+                
+                // Sección izquierda
+                const leftSection = document.createElement('div');
+                leftSection.className = 'section';
+                for (let i = 0; i < config[0]; i++) {
+                    const seat = createSeat(row, seatNumber++);
+                    leftSection.appendChild(seat);
+                }
+                rowDiv.appendChild(leftSection);
+                
+                // Sección central
+                const centerSection = document.createElement('div');
+                centerSection.className = 'section';
+                for (let i = 0; i < config[1]; i++) {
+                    const seat = createSeat(row, seatNumber++);
+                    centerSection.appendChild(seat);
+                }
+                rowDiv.appendChild(centerSection);
+                
+                // Sección derecha
+                const rightSection = document.createElement('div');
+                rightSection.className = 'section';
+                for (let i = 0; i < config[2]; i++) {
+                    const seat = createSeat(row, seatNumber++);
+                    rightSection.appendChild(seat);
+                }
+                rowDiv.appendChild(rightSection);
+                
+                rowContainer.appendChild(rowDiv);
+                layout.appendChild(rowContainer);
+            });
+        }
+
+        // Crear un asiento individual
+        function createSeat(row, number) {
+            const seat = document.createElement('div');
+            seat.className = 'seat';
+            seat.dataset.seat = `${row}${number}`;
+            seat.title = `Asiento ${row}${number}`;
+            return seat;
+        }
+
+        // Buscar asiento por código de alumno
+        async function findSeat() {
+            const input = document.getElementById('studentCode').value.trim().toLowerCase();
+            const errorDiv = document.getElementById('errorMessage');
+            
+            errorDiv.innerHTML = '';
+            
+            if (!input) {
+                errorDiv.innerHTML = '<p class="error-message">Por favor ingresa tu código de alumno</p>';
+                return;
+            }
+            
+            // Verificar si el código existe
+            if (studentDatabase[input]) {
+                const studentData = studentDatabase[input];
+                await showSeatingScreen(input, studentData.name, studentData.seat);
+            } else {
+                errorDiv.innerHTML = '<p class="error-message">Código de alumno no encontrado. Verifica tu código.</p>';
+            }
+        }
+
+        // Mostrar pantalla de asiento
+        async function showSeatingScreen(studentCode, studentName, seat) {
+            // Ocultar pantalla de bienvenida
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            
+            // Mostrar pantalla de asiento
+            document.getElementById('seatingScreen').classList.add('active');
+            
+            // Actualizar información del estudiante
+            document.getElementById('studentName').textContent = studentName;
+            document.getElementById('seatAssignment').textContent = seat;
+            document.getElementById('studentCodeDisplay').textContent = `Código: ${studentCode.toUpperCase()}`;
+            
+            // Registrar usuario en el almacenamiento compartido
+            try {
+                const userData = {
+                    code: studentCode,
+                    name: studentName,
+                    seat: seat,
+                    loginTime: new Date().toISOString()
+                };
+                
+                await window.storage.set(
+                    `logged_user:${studentCode}`, 
+                    JSON.stringify(userData), 
+                    true // shared = true para que el visor pueda acceder
+                );
+            } catch (error) {
+                console.error('Error registering user:', error);
+            }
+            
+            // Crear layout
+            createTheaterLayout();
+            
+            // Resaltar asiento
+            setTimeout(() => {
+                const seatElement = document.querySelector(`[data-seat="${seat}"]`);
+                if (seatElement) {
+                    seatElement.classList.add('selected');
+                    seatElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+        }
+
+        // Volver a pantalla de bienvenida
+        function goBack() {
+            // Limpiar selección
+            document.querySelectorAll('.seat.selected').forEach(seat => {
+                seat.classList.remove('selected');
+            });
+            
+            // Limpiar input y error
+            document.getElementById('studentCode').value = '';
+            document.getElementById('errorMessage').innerHTML = '';
+            
+            // Cambiar pantallas
+            document.getElementById('seatingScreen').classList.remove('active');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+        }
+
+        // Permitir buscar con Enter
+        document.getElementById('studentCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                findSeat();
+            }
+        });
+    </script>
+</body>
+</html>

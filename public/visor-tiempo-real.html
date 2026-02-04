@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor en Tiempo Real - Graduación</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #ff7b5f 0%, #ff6b54 50%, #e8604c 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 8px;
+            padding: 50px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+            max-width: 1400px;
+            width: 100%;
+            animation: fadeIn 0.5s;
+            border: 3px solid #ff6b54;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .university-logo {
+            font-size: 1.2em;
+            color: #ff6b54;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #555;
+            font-style: italic;
+        }
+
+        .stats-panel {
+            background: linear-gradient(135deg, #ff6b54 0%, #e8604c 100%);
+            color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border: 2px solid #e8604c;
+            box-shadow: 0 6px 15px rgba(255, 107, 84, 0.3);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .refresh-button {
+            padding: 12px 30px;
+            font-size: 1em;
+            background: linear-gradient(135deg, #ff6b54 0%, #e8604c 100%);
+            color: #ffffff;
+            border: 2px solid #ff6b54;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .refresh-button:hover {
+            background: linear-gradient(135deg, #ff8873 0%, #ff6b54 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 84, 0.4);
+        }
+
+        .auto-refresh {
+            margin-top: 15px;
+            color: #2c3e50;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .auto-refresh input {
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .stage {
+            background: linear-gradient(to bottom, #2c3e50, #34495e);
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 40px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 22px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid #ff6b54;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .theater-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            position: relative;
+        }
+
+        .row-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .row-label {
+            font-weight: 600;
+            font-size: 18px;
+            color: #2c3e50;
+            width: 30px;
+            text-align: right;
+            font-family: 'Georgia', serif;
+        }
+
+        .row {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+
+        .section {
+            display: flex;
+            gap: 6px;
+            padding: 5px;
+            background: rgba(255, 107, 84, 0.08);
+            border-radius: 4px;
+        }
+
+        .seat {
+            width: 30px;
+            height: 30px;
+            background: #f5f5f5;
+            border: 2px solid #8b7355;
+            border-radius: 6px 6px 2px 2px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s;
+        }
+
+        .seat::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 3px;
+            background: #8b7355;
+            border-radius: 0 0 2px 2px;
+        }
+
+        .seat.occupied {
+            background: #c41e3a;
+            border-color: #8b0000;
+            box-shadow: 0 4px 12px rgba(196, 30, 58, 0.5);
+            animation: pulse 0.5s;
+        }
+
+        .seat.occupied::after {
+            background: #8b0000;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            padding: 25px;
+            background: #ffffff;
+            border-radius: 4px;
+            border: 2px solid #e8e8e8;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-family: 'Arial', sans-serif;
+            color: #2c3e50;
+        }
+
+        .legend-seat {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px 6px 2px 2px;
+            border: 2px solid;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .legend-available {
+            background: #f5f5f5;
+            border-color: #8b7355;
+        }
+
+        .legend-occupied {
+            background: #c41e3a;
+            border-color: #8b0000;
+        }
+
+        .logged-users-list {
+            background: #ffffff;
+            border: 2px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 30px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .logged-users-list h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-family: 'Georgia', serif;
+        }
+
+        .user-entry {
+            padding: 12px;
+            background: #f8f9fa;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #ff6b54;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .user-code {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .user-seat {
+            background: #ff6b54;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .last-update {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 20px;
+            font-family: 'Arial', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="university-logo">VISOR EN TIEMPO REAL - GRADUACIÓN 2025</div>
+            <h1>📊 Panel de Control</h1>
+            <p class="subtitle">Seguimiento de asistentes logueados</p>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-item">
+                <span class="stat-number" id="totalLoggedIn">0</span>
+                <span class="stat-label">Usuarios Logueados</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="totalSeats">406</span>
+                <span class="stat-label">Asientos Totales</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="percentageOccupied">0%</span>
+                <span class="stat-label">Ocupación</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="refresh-button" onclick="loadLoggedUsers()">🔄 Actualizar Ahora</button>
+            <div class="auto-refresh">
+                <label>
+                    <input type="checkbox" id="autoRefreshCheck" checked onchange="toggleAutoRefresh()">
+                    Actualización automática cada 5 segundos
+                </label>
+            </div>
+        </div>
+
+        <div class="stage">ESCENARIO</div>
+
+        <div class="theater-layout" id="theaterLayout"></div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-seat legend-available"></div>
+                <span>Asiento disponible</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-seat legend-occupied"></div>
+                <span>Usuario logueado</span>
+            </div>
+        </div>
+
+        <div class="logged-users-list">
+            <h3>👥 Usuarios Logueados</h3>
+            <div id="usersList"></div>
+        </div>
+
+        <div class="last-update" id="lastUpdate">Última actualización: --:--:--</div>
+    </div>
+
+    <script>
+        // Configuración del teatro: 14 filas (A-N)
+        const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
+        
+        // Configuración de asientos por sección en cada fila
+        const seatingConfig = [
+            [6, 14, 8],   // Fila A
+            [7, 14, 8],   // Fila B
+            [7, 14, 8],   // Fila C
+            [8, 14, 8],   // Fila D
+            [8, 14, 8],   // Fila E
+            [8, 14, 8],   // Fila F
+            [8, 14, 8],   // Fila G
+            [8, 14, 8],   // Fila H
+            [8, 14, 8],   // Fila I
+            [8, 13, 8],   // Fila J
+            [8, 13, 8],   // Fila K
+            [7, 11, 7],   // Fila L
+            [6, 10, 6],   // Fila M
+            [6, 10, 6]    // Fila N
+        ];
+
+        let autoRefreshInterval = null;
+        let loggedUsers = [];
+
+        // Crear el layout del teatro
+        function createTheaterLayout() {
+            const layout = document.getElementById('theaterLayout');
+            layout.innerHTML = '';
+            
+            rows.forEach((row, rowIndex) => {
+                const rowContainer = document.createElement('div');
+                rowContainer.className = 'row-container';
+                
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'row-label';
+                rowLabel.textContent = row;
+                rowContainer.appendChild(rowLabel);
+                
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                
+                const config = seatingConfig[rowIndex];
+                let seatNumber = 1;
+                
+                // Sección izquierda
+                const leftSection = document.createElement('div');
+                leftSection.className = 'section';
+                for (let i = 0; i < config[0]; i++) {
+                    const seat = createSeat(row, seatNumber++);
+                    leftSection.appendChild(seat);
+                }
+                rowDiv.appendChild(leftSection);
+                
+                // Sección central
+                const centerSection = document.createElement('div');
+                centerSection.className = 'section';
+                for (let i = 0; i < config[1]; i++) {
+                    const seat = createSeat(row, seatNumber++);
+                    centerSection.appendChild(seat);
+                }
+                rowDiv.appendChild(centerSection);
+                
+                // Sección derecha
+                const rightSection = document.createElement('div');
+                rightSection.className = 'section';
+                for (let i = 0; i < config[2]; i++) {
+                    const seat = createSeat(row, seatNumber++);
+                    rightSection.appendChild(seat);
+                }
+                rowDiv.appendChild(rightSection);
+                
+                rowContainer.appendChild(rowDiv);
+                layout.appendChild(rowContainer);
+            });
+        }
+
+        // Crear un asiento individual
+        function createSeat(row, number) {
+            const seat = document.createElement('div');
+            seat.className = 'seat';
+            seat.dataset.seat = `${row}${number}`;
+            seat.title = `Asiento ${row}${number}`;
+            return seat;
+        }
+
+        // Cargar usuarios logueados desde el almacenamiento
+        async function loadLoggedUsers() {
+            try {
+                // Obtener la lista de usuarios logueados del almacenamiento compartido
+                const result = await window.storage.list('logged_user:', true);
+                
+                if (result && result.keys) {
+                    loggedUsers = [];
+                    
+                    // Obtener datos de cada usuario
+                    for (const key of result.keys) {
+                        try {
+                            const userData = await window.storage.get(key, true);
+                            if (userData && userData.value) {
+                                const user = JSON.parse(userData.value);
+                                loggedUsers.push(user);
+                            }
+                        } catch (e) {
+                            console.error('Error loading user:', e);
+                        }
+                    }
+                    
+                    updateDisplay();
+                }
+            } catch (error) {
+                console.error('Error loading logged users:', error);
+            }
+            
+            updateLastUpdateTime();
+        }
+
+        // Actualizar la visualización
+        function updateDisplay() {
+            // Limpiar asientos ocupados
+            document.querySelectorAll('.seat.occupied').forEach(seat => {
+                seat.classList.remove('occupied');
+            });
+            
+            // Marcar asientos ocupados
+            loggedUsers.forEach(user => {
+                const seatElement = document.querySelector(`[data-seat="${user.seat}"]`);
+                if (seatElement) {
+                    seatElement.classList.add('occupied');
+                    seatElement.title = `${user.name} - ${user.code.toUpperCase()}`;
+                }
+            });
+            
+            // Actualizar estadísticas
+            document.getElementById('totalLoggedIn').textContent = loggedUsers.length;
+            const percentage = ((loggedUsers.length / 406) * 100).toFixed(1);
+            document.getElementById('percentageOccupied').textContent = percentage + '%';
+            
+            // Actualizar lista de usuarios
+            updateUsersList();
+        }
+
+        // Actualizar lista de usuarios
+        function updateUsersList() {
+            const usersList = document.getElementById('usersList');
+            
+            if (loggedUsers.length === 0) {
+                usersList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay usuarios logueados aún</p>';
+                return;
+            }
+            
+            // Ordenar por hora de login (más recientes primero)
+            const sortedUsers = [...loggedUsers].sort((a, b) => {
+                return new Date(b.loginTime) - new Date(a.loginTime);
+            });
+            
+            usersList.innerHTML = sortedUsers.map(user => `
+                <div class="user-entry">
+                    <div class="user-info">
+                        <span class="user-name">${user.name}</span>
+                        <span class="user-code">${user.code.toUpperCase()}</span>
+                    </div>
+                    <span class="user-seat">${user.seat}</span>
+                </div>
+            `).join('');
+        }
+
+        // Actualizar hora de última actualización
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-PE', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            document.getElementById('lastUpdate').textContent = `Última actualización: ${timeString}`;
+        }
+
+        // Toggle auto-refresh
+        function toggleAutoRefresh() {
+            const isChecked = document.getElementById('autoRefreshCheck').checked;
+            
+            if (isChecked) {
+                // Iniciar auto-refresh cada 5 segundos
+                autoRefreshInterval = setInterval(loadLoggedUsers, 5000);
+            } else {
+                // Detener auto-refresh
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+            }
+        }
+
+        // Inicializar
+        createTheaterLayout();
+        loadLoggedUsers();
+        
+        // Iniciar auto-refresh
+        toggleAutoRefresh();
+    </script>
+</body>
+</html>

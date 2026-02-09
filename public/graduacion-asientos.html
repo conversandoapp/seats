@@ -232,12 +232,12 @@
             min-width: 200px;
         }
 
-        /* Vista de Bloques */
-        .blocks-overview {
+        /* Vista de Layout del Recinto */
+        .venue-layout {
             margin-bottom: 40px;
         }
 
-        .blocks-overview h3 {
+        .venue-layout h3 {
             text-align: center;
             color: #2c3e50;
             font-size: 1.8em;
@@ -245,85 +245,213 @@
             font-family: 'Georgia', serif;
         }
 
-        .blocks-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
+        .venue-container {
             max-width: 1200px;
             margin: 0 auto;
-        }
-
-        .block-card {
-            background: #ffffff;
-            border: 3px solid #e8e8e8;
-            border-radius: 12px;
             padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e8e8e8;
+        }
+
+        /* Tribunas y Bloques */
+        .tribunas-section {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            border: 3px solid #8b7355;
+            margin-bottom: 30px;
+        }
+
+        .tribunas-label {
             text-align: center;
-            transition: all 0.3s;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .block-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(255, 107, 84, 0.2);
-            border-color: #ff6b54;
-        }
-
-        .block-card.user-block {
-            border: 3px solid #ff6b54;
-            background: linear-gradient(135deg, rgba(255, 107, 84, 0.05) 0%, rgba(255, 107, 84, 0.1) 100%);
-        }
-
-        .block-card.user-block::before {
-            content: '⭐';
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 2em;
-        }
-
-        .block-card-header {
-            font-size: 3em;
-            font-weight: bold;
-            color: #ff6b54;
-            margin-bottom: 15px;
-            font-family: 'Georgia', serif;
-        }
-
-        .block-card-title {
-            font-size: 1.5em;
+            font-size: 1.4em;
             color: #2c3e50;
             margin-bottom: 20px;
             font-family: 'Georgia', serif;
+            font-weight: 600;
         }
 
-        .block-card-info {
-            font-size: 1em;
-            color: #666;
-            margin-bottom: 20px;
+        .stage-and-blocks {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .stage {
+            background: #e8e8e8;
+            padding: 30px 50px;
+            border-radius: 4px;
+            text-align: center;
+            color: #555;
+            font-size: 1.1em;
+            font-weight: 500;
             font-family: 'Arial', sans-serif;
+            border: 2px solid #999;
+            min-width: 180px;
         }
 
-        .block-card-seat {
-            background: linear-gradient(135deg, #ff6b54 0%, #e8604c 100%);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 6px;
-            font-size: 1.8em;
+        /* Público (asientos rosados) */
+        .public-seating {
+            margin-bottom: 30px;
+        }
+
+        .public-label {
+            text-align: center;
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 15px;
+            font-family: 'Arial', sans-serif;
+            font-weight: 600;
+        }
+
+        .public-groups-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .public-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .aisle {
+            width: 30px;
+            min-height: 200px;
+        }
+
+        .public-row {
+            display: flex;
+            gap: 2px;
+        }
+
+        .public-seat {
+            width: 12px;
+            height: 12px;
+            background: #ff69b4;
+            border-radius: 2px;
+            opacity: 0.7;
+        }
+
+        /* Ingreso */
+        .entrance {
+            text-align: center;
+            padding: 25px;
+            margin-top: 20px;
+            font-size: 1.3em;
+            color: #c41e3a;
+            font-weight: 600;
+            font-family: 'Arial', sans-serif;
+            letter-spacing: 2px;
+            border-top: 3px solid #c41e3a;
+        }
+
+        .block-item {
+            background: #ffffff;
+            border: 3px solid #ddd;
+            border-radius: 8px;
+            padding: 25px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 120px;
+            position: relative;
+        }
+
+        .block-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(255, 107, 84, 0.3);
+            border-color: #ff6b54;
+        }
+
+        .block-item.user-block {
+            border: 3px solid #ff6b54;
+            background: linear-gradient(135deg, rgba(255, 107, 84, 0.1) 0%, rgba(255, 107, 84, 0.15) 100%);
+        }
+
+        .block-item.user-block::before {
+            content: '⭐';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 1.5em;
+        }
+
+        .block-letter {
+            font-size: 2.5em;
             font-weight: bold;
-            margin: 20px 0;
+            color: #ff6b54;
+            margin-bottom: 8px;
             font-family: 'Georgia', serif;
         }
 
-        .block-card-action {
-            color: #ff6b54;
-            font-size: 1.1em;
-            font-weight: 600;
+        .block-name {
+            font-size: 1em;
+            color: #2c3e50;
             font-family: 'Arial', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .block-seat-info {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #ff6b54;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #c41e3a;
+            font-family: 'Georgia', serif;
+        }
+
+        .venue-legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 2px solid #e8e8e8;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95em;
+            font-family: 'Arial', sans-serif;
+            color: #2c3e50;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 25px;
+            border-radius: 4px;
+            border: 2px solid;
+        }
+
+        .legend-public {
+            background: #ff69b4;
+            border-color: #ff1493;
+            opacity: 0.7;
+        }
+
+        .legend-stage {
+            background: #e8e8e8;
+            border-color: #999;
+        }
+
+        .legend-block {
+            background: #ffffff;
+            border-color: #ddd;
+        }
+
+        .legend-my-block {
+            background: rgba(255, 107, 84, 0.15);
+            border-color: #ff6b54;
         }
 
         /* Vista Detallada del Bloque */
@@ -375,6 +503,48 @@
             border-radius: 12px;
             border: 2px solid #ff6b54;
             overflow-x: auto;
+            position: relative;
+        }
+
+        .orientation-indicators {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin-bottom: 20px;
+        }
+
+        .orientation-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            font-family: 'Arial', sans-serif;
+            padding: 12px 20px;
+            border-radius: 6px;
+            background: #ffffff;
+            border: 2px solid;
+        }
+
+        .orientation-stage {
+            color: #555;
+            border-color: #999;
+            margin-bottom: 15px;
+        }
+
+        .orientation-public {
+            color: #ff1493;
+            border-color: #ff69b4;
+            margin-top: 15px;
+        }
+
+        .arrow {
+            font-size: 1.5em;
+        }
+
+        .block-layout-wrapper {
+            position: relative;
         }
 
         .block-layout {
@@ -462,15 +632,6 @@
             flex-wrap: wrap;
         }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 16px;
-            font-family: 'Arial', sans-serif;
-            color: #2c3e50;
-        }
-
         .legend-seat {
             width: 28px;
             height: 28px;
@@ -490,6 +651,21 @@
         }
 
         /* Responsive */
+        @media (max-width: 968px) {
+            .stage-and-blocks {
+                flex-wrap: wrap;
+            }
+
+            .stage {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+
+            .public-row {
+                justify-content: center;
+            }
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 30px 20px;
@@ -503,10 +679,6 @@
                 font-size: 3em;
             }
 
-            .blocks-grid {
-                grid-template-columns: 1fr;
-            }
-
             .seat {
                 width: 22px;
                 height: 22px;
@@ -516,13 +688,27 @@
                 font-size: 0.9em;
                 width: 25px;
             }
+
+            .block-item {
+                min-width: 100px;
+                padding: 20px 15px;
+            }
+
+            .block-letter {
+                font-size: 2em;
+            }
+
+            .orientation-label {
+                font-size: 1em;
+                padding: 10px 15px;
+            }
+
+            .arrow {
+                font-size: 1.2em;
+            }
         }
 
         @media (max-width: 480px) {
-            .block-card-header {
-                font-size: 2.5em;
-            }
-
             .seat {
                 width: 18px;
                 height: 18px;
@@ -530,6 +716,24 @@
 
             .row {
                 gap: 3px;
+            }
+
+            .public-seat {
+                width: 12px;
+                height: 12px;
+            }
+
+            .stage-and-blocks {
+                gap: 10px;
+            }
+
+            .venue-legend {
+                gap: 15px;
+            }
+
+            .orientation-label {
+                font-size: 0.9em;
+                padding: 8px 12px;
             }
         }
     </style>
@@ -569,16 +773,81 @@
                 <p id="studentCodeDisplay"></p>
             </div>
 
-            <!-- Vista de Bloques -->
-            <div class="blocks-overview" id="blocksOverview">
-                <h3>Selecciona tu bloque para ver el detalle</h3>
-                <div class="blocks-grid" id="blocksGrid"></div>
+            <!-- Vista de Layout del Recinto -->
+            <div class="venue-layout" id="venueLayout">
+                <h3>Distribución del Recinto</h3>
+                <div class="venue-container">
+                    <!-- Tribunas con Escenario y Bloques -->
+                    <div class="tribunas-section">
+                        <div class="tribunas-label">TRIBUNAS - Graduandos</div>
+                        <div class="stage-and-blocks">
+                            <div class="block-item" data-block="A" onclick="showBlockDetail('A')">
+                                <div class="block-letter">A</div>
+                                <div class="block-name">Bloque A</div>
+                                <div id="blockAInfo"></div>
+                            </div>
+
+                            <div class="block-item" data-block="B" onclick="showBlockDetail('B')">
+                                <div class="block-letter">B</div>
+                                <div class="block-name">Bloque B</div>
+                                <div id="blockBInfo"></div>
+                            </div>
+
+                            <div class="stage">
+                                ESTRADO
+                            </div>
+
+                            <div class="block-item" data-block="C" onclick="showBlockDetail('C')">
+                                <div class="block-letter">C</div>
+                                <div class="block-name">Bloque C</div>
+                                <div id="blockCInfo"></div>
+                            </div>
+
+                            <div class="block-item" data-block="D" onclick="showBlockDetail('D')">
+                                <div class="block-letter">D</div>
+                                <div class="block-name">Bloque D</div>
+                                <div id="blockDInfo"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Asientos del Público -->
+                    <div class="public-seating">
+                        <div class="public-label">PÚBLICO (Libre Asignación)</div>
+                        <div class="public-groups-container" id="publicSeating"></div>
+                    </div>
+
+                    <!-- Ingreso -->
+                    <div class="entrance">
+                        ↑ INGRESO ↑
+                    </div>
+
+                    <!-- Leyenda -->
+                    <div class="venue-legend">
+                        <div class="legend-item">
+                            <div class="legend-box legend-public"></div>
+                            <span>Asientos Público</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-box legend-stage"></div>
+                            <span>Estrado</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-box legend-block"></div>
+                            <span>Bloques Graduandos</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-box legend-my-block"></div>
+                            <span>Mi Bloque</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Vista Detallada del Bloque -->
             <div class="block-detail" id="blockDetail">
                 <div class="back-button-container">
-                    <button class="btn-secondary" onclick="showBlocksOverview()">← Ver todos los bloques</button>
+                    <button class="btn-secondary" onclick="showVenueLayout()">← Ver distribución general</button>
                 </div>
 
                 <div class="block-detail-header">
@@ -587,7 +856,19 @@
                 </div>
 
                 <div class="block-layout-container">
-                    <div class="block-layout" id="blockLayout"></div>
+                    <div class="orientation-label orientation-stage">
+                        <span>ESTRADO</span>
+                    </div>
+                    
+                    <div class="block-layout-wrapper">
+                        <div class="block-layout" id="blockLayout"></div>
+                    </div>
+
+                    <div class="orientation-label orientation-public">
+                        <span class="arrow">↓</span>
+                        <span>PÚBLICO (Frente)</span>
+                        <span class="arrow">↓</span>
+                    </div>
                 </div>
 
                 <div class="legend">
@@ -692,47 +973,76 @@
                 console.error('Error registering user:', error);
             }
             
-            // Crear vista de bloques
-            createBlocksOverview();
+            // Crear vista del recinto
+            createVenueLayout();
         }
 
-        // Crear vista de bloques
-        function createBlocksOverview() {
-            const grid = document.getElementById('blocksGrid');
-            grid.innerHTML = '';
+        // Crear vista del recinto
+        function createVenueLayout() {
+            // Crear asientos del público en 4 grupos con 3 pasillos
+            const publicSeating = document.getElementById('publicSeating');
+            publicSeating.innerHTML = '';
             
-            BLOCKS.forEach(blockLetter => {
-                const card = document.createElement('div');
-                card.className = 'block-card';
+            const ROWS = 15; // Más filas para hacerlo más largo
+            const SEATS_PER_GROUP = 10; // Más asientos por grupo
+            
+            // Crear 4 grupos divididos por 3 pasillos
+            // Estructura: Grupo 1 | Pasillo | Grupo 2 | Pasillo | Grupo 3 | Pasillo | Grupo 4
+            for (let groupIndex = 0; groupIndex < 4; groupIndex++) {
+                // Crear el grupo de asientos
+                const group = document.createElement('div');
+                group.className = 'public-group';
                 
-                const isUserBlock = currentStudentData.block === blockLetter;
-                if (isUserBlock) {
-                    card.classList.add('user-block');
+                for (let row = 0; row < ROWS; row++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'public-row';
+                    
+                    for (let seat = 0; seat < SEATS_PER_GROUP; seat++) {
+                        const seatDiv = document.createElement('div');
+                        seatDiv.className = 'public-seat';
+                        rowDiv.appendChild(seatDiv);
+                    }
+                    
+                    group.appendChild(rowDiv);
                 }
                 
-                card.innerHTML = `
-                    <div class="block-card-header">${blockLetter}</div>
-                    <div class="block-card-title">Bloque ${blockLetter}</div>
-                    <div class="block-card-info">7 filas × 21 asientos</div>
-                    ${isUserBlock ? `
-                        <div class="block-card-seat">${currentStudentData.seat}</div>
-                        <div class="block-card-info">Fila ${currentStudentData.row}</div>
-                    ` : ''}
-                    <div class="block-card-action">
-                        ${isUserBlock ? '👁️ Ver mi ubicación' : '📍 Ver detalle'}
-                    </div>
-                `;
+                publicSeating.appendChild(group);
                 
-                card.onclick = () => showBlockDetail(blockLetter);
-                grid.appendChild(card);
+                // Agregar pasillo después de cada grupo excepto el último
+                if (groupIndex < 3) {
+                    const aisle = document.createElement('div');
+                    aisle.className = 'aisle';
+                    publicSeating.appendChild(aisle);
+                }
+            }
+
+            // Resaltar el bloque del usuario
+            BLOCKS.forEach(blockLetter => {
+                const blockElement = document.querySelector(`[data-block="${blockLetter}"]`);
+                const infoElement = document.getElementById(`block${blockLetter}Info`);
+                
+                if (currentStudentData.block === blockLetter) {
+                    blockElement.classList.add('user-block');
+                    infoElement.innerHTML = `<div class="block-seat-info">${currentStudentData.seat}</div>`;
+                }
             });
         }
 
         // Mostrar detalle del bloque
         function showBlockDetail(blockLetter) {
-            document.getElementById('blocksOverview').style.display = 'none';
+            document.getElementById('venueLayout').style.display = 'none';
             document.getElementById('blockDetail').classList.add('active');
             document.getElementById('blockDetailTitle').textContent = `Bloque ${blockLetter}`;
+            
+            // Actualizar la orientación del estrado según el bloque
+            const stageLabel = document.querySelector('.orientation-stage');
+            if (blockLetter === 'A' || blockLetter === 'B') {
+                // Bloques A y B: estrado a la derecha
+                stageLabel.innerHTML = '<span>ESTRADO</span><span class="arrow"> →→→</span>';
+            } else {
+                // Bloques C y D: estrado a la izquierda
+                stageLabel.innerHTML = '<span class="arrow">←←← </span><span>ESTRADO</span>';
+            }
             
             createBlockLayout(blockLetter);
         }
@@ -784,10 +1094,10 @@
             return seat;
         }
 
-        // Volver a vista de bloques
-        function showBlocksOverview() {
+        // Volver a vista del recinto
+        function showVenueLayout() {
             document.getElementById('blockDetail').classList.remove('active');
-            document.getElementById('blocksOverview').style.display = 'block';
+            document.getElementById('venueLayout').style.display = 'block';
         }
 
         // Volver a pantalla de bienvenida
@@ -796,8 +1106,16 @@
             document.getElementById('errorMessage').innerHTML = '';
             document.getElementById('seatingScreen').classList.remove('active');
             document.getElementById('welcomeScreen').classList.remove('hidden');
-            document.getElementById('blocksOverview').style.display = 'block';
+            document.getElementById('venueLayout').style.display = 'block';
             document.getElementById('blockDetail').classList.remove('active');
+            
+            // Limpiar bloques
+            BLOCKS.forEach(blockLetter => {
+                const blockElement = document.querySelector(`[data-block="${blockLetter}"]`);
+                const infoElement = document.getElementById(`block${blockLetter}Info`);
+                blockElement.classList.remove('user-block');
+                infoElement.innerHTML = '';
+            });
         }
 
         // Permitir buscar con Enter

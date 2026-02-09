@@ -263,6 +263,20 @@
             border: 3px solid #8b7355;
             margin-bottom: 30px;
         }
+        
+        @media (max-width: 768px) {
+            .tribunas-section {
+                padding: 15px 10px;
+                margin-bottom: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .tribunas-section {
+                padding: 12px 8px;
+                margin-bottom: 15px;
+            }
+        }
 
         .tribunas-label {
             text-align: center;
@@ -271,6 +285,20 @@
             margin-bottom: 20px;
             font-family: 'Georgia', serif;
             font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .tribunas-label {
+                font-size: 1.1em;
+                margin-bottom: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .tribunas-label {
+                font-size: 1em;
+                margin-bottom: 10px;
+            }
         }
 
         .stage-and-blocks {
@@ -281,6 +309,20 @@
             overflow-x: auto;
             padding: 10px 5px;
             flex-wrap: nowrap;
+        }
+        
+        @media (max-width: 768px) {
+            .stage-and-blocks {
+                gap: 5px;
+                padding: 5px 2px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stage-and-blocks {
+                gap: 4px;
+                padding: 5px 2px;
+            }
         }
 
         .stage {
@@ -295,6 +337,22 @@
             border: 2px solid #999;
             min-width: 100px;
             flex-shrink: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .stage {
+                min-width: 70px;
+                padding: 15px 10px;
+                font-size: 0.75em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stage {
+                min-width: 60px;
+                padding: 12px 8px;
+                font-size: 0.7em;
+            }
         }
 
         /* Público (asientos rosados) */
@@ -368,6 +426,23 @@
             position: relative;
             flex-shrink: 0;
         }
+        
+        @media (max-width: 768px) {
+            .block-item {
+                min-width: 60px;
+                max-width: 60px;
+                padding: 10px 5px;
+                border-width: 2px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .block-item {
+                min-width: 55px;
+                max-width: 55px;
+                padding: 8px 4px;
+            }
+        }
 
         .block-item:hover {
             transform: translateY(-5px);
@@ -387,6 +462,22 @@
             right: 8px;
             font-size: 1.5em;
         }
+        
+        @media (max-width: 768px) {
+            .block-item.user-block::before {
+                font-size: 1em;
+                top: 5px;
+                right: 5px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .block-item.user-block::before {
+                font-size: 0.9em;
+                top: 4px;
+                right: 4px;
+            }
+        }
 
         .block-letter {
             font-size: 2em;
@@ -402,6 +493,28 @@
             font-family: 'Arial', sans-serif;
             font-weight: 500;
         }
+        
+        @media (max-width: 768px) {
+            .block-letter {
+                font-size: 1.5em;
+                margin-bottom: 3px;
+            }
+            
+            .block-name {
+                font-size: 0.65em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .block-letter {
+                font-size: 1.3em;
+                margin-bottom: 2px;
+            }
+            
+            .block-name {
+                font-size: 0.6em;
+            }
+        }
 
         .block-seat-info {
             margin-top: 8px;
@@ -411,6 +524,23 @@
             font-weight: bold;
             color: #c41e3a;
             font-family: 'Georgia', serif;
+        }
+        
+        @media (max-width: 768px) {
+            .block-seat-info {
+                font-size: 0.85em;
+                margin-top: 5px;
+                padding-top: 5px;
+                border-top-width: 1px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .block-seat-info {
+                font-size: 0.75em;
+                margin-top: 4px;
+                padding-top: 4px;
+            }
         }
 
         .venue-legend {

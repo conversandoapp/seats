@@ -355,7 +355,7 @@
             }
         }
 
-        /* Público (asientos rosados) */
+        /* Público (bloques simplificados) */
         .public-seating {
             margin-bottom: 30px;
         }
@@ -372,32 +372,55 @@
         .public-groups-container {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            align-items: flex-start;
+            align-items: stretch;
+            gap: 0;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        .public-group {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .aisle {
-            width: 30px;
-            min-height: 200px;
-        }
-
-        .public-row {
-            display: flex;
-            gap: 2px;
-        }
-
-        .public-seat {
-            width: 12px;
-            height: 12px;
-            background: #ff69b4;
-            border-radius: 2px;
+        .public-block {
+            flex: 1;
+            height: 90px;
+            background: repeating-linear-gradient(
+                0deg,
+                #ff69b4 0px,
+                #ff69b4 5px,
+                #ffb6d3 5px,
+                #ffb6d3 6px
+            );
             opacity: 0.7;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .public-aisle {
+            width: 18px;
+            flex-shrink: 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .public-aisle::after {
+            content: '';
+            width: 1px;
+            height: 70%;
+            border-left: 2px dashed #bbb;
+        }
+
+        @media (max-width: 480px) {
+            .public-groups-container {
+                max-width: 320px;
+            }
+
+            .public-block {
+                height: 60px;
+            }
+
+            .public-aisle {
+                width: 12px;
+            }
         }
 
         /* Ingreso */
@@ -573,7 +596,7 @@
         .legend-public {
             background: #ff69b4;
             border-color: #ff1493;
-            opacity: 0.7;
+            opacity: 0.75;
         }
 
         .legend-stage {
@@ -814,10 +837,6 @@
 
         /* Responsive */
         @media (max-width: 968px) {
-            .public-row {
-                justify-content: center;
-            }
-            
             .tribunas-section {
                 padding: 20px 10px;
             }
@@ -884,11 +903,6 @@
 
             .row {
                 gap: 3px;
-            }
-
-            .public-seat {
-                width: 12px;
-                height: 12px;
             }
 
             .stage-and-blocks {
@@ -1178,39 +1192,18 @@
 
         // Crear vista del recinto
         function createVenueLayout() {
-            // Crear asientos del público en 4 grupos con 3 pasillos
+            // Crear 4 bloques de público con 3 pasillos
             const publicSeating = document.getElementById('publicSeating');
             publicSeating.innerHTML = '';
-            
-            const ROWS = 15; // Más filas para hacerlo más largo
-            const SEATS_PER_GROUP = 10; // Más asientos por grupo
-            
-            // Crear 4 grupos divididos por 3 pasillos
-            // Estructura: Grupo 1 | Pasillo | Grupo 2 | Pasillo | Grupo 3 | Pasillo | Grupo 4
-            for (let groupIndex = 0; groupIndex < 4; groupIndex++) {
-                // Crear el grupo de asientos
-                const group = document.createElement('div');
-                group.className = 'public-group';
-                
-                for (let row = 0; row < ROWS; row++) {
-                    const rowDiv = document.createElement('div');
-                    rowDiv.className = 'public-row';
-                    
-                    for (let seat = 0; seat < SEATS_PER_GROUP; seat++) {
-                        const seatDiv = document.createElement('div');
-                        seatDiv.className = 'public-seat';
-                        rowDiv.appendChild(seatDiv);
-                    }
-                    
-                    group.appendChild(rowDiv);
-                }
-                
-                publicSeating.appendChild(group);
-                
-                // Agregar pasillo después de cada grupo excepto el último
-                if (groupIndex < 3) {
+
+            for (let i = 0; i < 4; i++) {
+                const block = document.createElement('div');
+                block.className = 'public-block';
+                publicSeating.appendChild(block);
+
+                if (i < 3) {
                     const aisle = document.createElement('div');
-                    aisle.className = 'aisle';
+                    aisle.className = 'public-aisle';
                     publicSeating.appendChild(aisle);
                 }
             }

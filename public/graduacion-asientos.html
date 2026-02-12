@@ -380,7 +380,7 @@
 
         .public-block {
             flex: 1;
-            height: 90px;
+            height: 180px;
             background: repeating-linear-gradient(
                 0deg,
                 #ff69b4 0px,
@@ -415,7 +415,7 @@
             }
 
             .public-block {
-                height: 60px;
+                height: 120px;
             }
 
             .public-aisle {
@@ -666,13 +666,6 @@
             position: relative;
         }
 
-        .orientation-indicators {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            margin-bottom: 20px;
-        }
-
         .orientation-label {
             display: flex;
             align-items: center;
@@ -687,10 +680,44 @@
             border: 2px solid;
         }
 
+        .block-content-row {
+            display: flex;
+            align-items: stretch;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
         .orientation-stage {
             color: #555;
             border-color: #999;
-            margin-bottom: 15px;
+            writing-mode: vertical-lr;
+            text-orientation: mixed;
+            padding: 20px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 50px;
+            flex-shrink: 0;
+        }
+
+        .orientation-stage .stage-arrow {
+            writing-mode: horizontal-tb;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .orientation-stage.stage-right {
+            order: 2;
+        }
+
+        .orientation-stage.stage-left {
+            order: 0;
+        }
+
+        .block-layout-wrapper {
+            order: 1;
+            flex: 1;
         }
 
         .orientation-public {
@@ -703,10 +730,6 @@
             font-size: 1.5em;
         }
 
-        .block-layout-wrapper {
-            position: relative;
-        }
-        
         .mobile-zoom-hint {
             display: none;
             text-align: center;
@@ -883,10 +906,18 @@
                 font-size: 1em;
                 padding: 10px 15px;
             }
-        }
 
             .arrow {
                 font-size: 1.2em;
+            }
+
+            .orientation-stage {
+                min-width: 40px;
+                padding: 15px 8px;
+            }
+
+            .block-content-row {
+                gap: 10px;
             }
         }
 
@@ -917,7 +948,17 @@
                 font-size: 0.9em;
                 padding: 8px 12px;
             }
-            
+
+            .orientation-stage {
+                min-width: 35px;
+                padding: 12px 6px;
+                font-size: 0.8em;
+            }
+
+            .block-content-row {
+                gap: 8px;
+            }
+
             .block-layout-container {
                 padding: 15px;
             }
@@ -943,7 +984,6 @@
             .student-info .row-info {
                 font-size: 1.2em;
             }
-        }
         }
     </style>
 </head>
@@ -1065,16 +1105,19 @@
                 </div>
 
                 <div class="block-layout-container">
-                    <div class="orientation-label orientation-stage">
-                        <span>ESTRADO</span>
-                    </div>
-                    
                     <div class="mobile-zoom-hint">
                         💡 Usa dos dedos para hacer zoom y ver tu asiento
                     </div>
-                    
-                    <div class="block-layout-wrapper">
-                        <div class="block-layout" id="blockLayout"></div>
+
+                    <div class="block-content-row">
+                        <div class="orientation-label orientation-stage stage-right">
+                            <span>ESTRADO</span>
+                            <span class="stage-arrow">→</span>
+                        </div>
+
+                        <div class="block-layout-wrapper">
+                            <div class="block-layout" id="blockLayout"></div>
+                        </div>
                     </div>
 
                     <div class="orientation-label orientation-public">
@@ -1230,10 +1273,12 @@
             const stageLabel = document.querySelector('.orientation-stage');
             if (blockLetter === 'A' || blockLetter === 'B') {
                 // Bloques A y B: estrado a la derecha
-                stageLabel.innerHTML = '<span>ESTRADO</span><span class="arrow"> →→→</span>';
+                stageLabel.className = 'orientation-label orientation-stage stage-right';
+                stageLabel.innerHTML = '<span>ESTRADO</span><span class="stage-arrow">→</span>';
             } else {
                 // Bloques C y D: estrado a la izquierda
-                stageLabel.innerHTML = '<span class="arrow">←←← </span><span>ESTRADO</span>';
+                stageLabel.className = 'orientation-label orientation-stage stage-left';
+                stageLabel.innerHTML = '<span class="stage-arrow">←</span><span>ESTRADO</span>';
             }
             
             createBlockLayout(blockLetter);

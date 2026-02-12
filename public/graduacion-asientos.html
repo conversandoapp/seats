@@ -1269,16 +1269,24 @@
             document.getElementById('blockDetail').classList.add('active');
             document.getElementById('blockDetailTitle').textContent = `Bloque ${blockLetter}`;
             
-            // Actualizar la orientación del estrado según el bloque
+            // Actualizar la orientación según el bloque
             const stageLabel = document.querySelector('.orientation-stage');
-            if (blockLetter === 'A' || blockLetter === 'B') {
-                // Bloques A y B: estrado a la derecha
+            if (blockLetter === 'A') {
+                // Bloque A: bloque B a la derecha
+                stageLabel.className = 'orientation-label orientation-stage stage-right';
+                stageLabel.innerHTML = '<span>BLOQUE B</span><span class="stage-arrow">→</span>';
+            } else if (blockLetter === 'B') {
+                // Bloque B: estrado a la derecha
                 stageLabel.className = 'orientation-label orientation-stage stage-right';
                 stageLabel.innerHTML = '<span>ESTRADO</span><span class="stage-arrow">→</span>';
-            } else {
-                // Bloques C y D: estrado a la izquierda
+            } else if (blockLetter === 'C') {
+                // Bloque C: estrado a la izquierda
                 stageLabel.className = 'orientation-label orientation-stage stage-left';
                 stageLabel.innerHTML = '<span class="stage-arrow">←</span><span>ESTRADO</span>';
+            } else {
+                // Bloque D: bloque C a la izquierda
+                stageLabel.className = 'orientation-label orientation-stage stage-left';
+                stageLabel.innerHTML = '<span class="stage-arrow">←</span><span>BLOQUE C</span>';
             }
             
             createBlockLayout(blockLetter);

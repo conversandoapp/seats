@@ -24,9 +24,9 @@
         .container {
             background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
             border-radius: 8px;
-            padding: 50px;
+            padding: 40px 30px;
             box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
-            max-width: 1400px;
+            max-width: 1800px;
             width: 100%;
             animation: fadeIn 0.5s;
             border: 3px solid #ff6b54;
@@ -39,7 +39,7 @@
 
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         .university-logo {
@@ -48,19 +48,19 @@
             font-weight: bold;
             letter-spacing: 2px;
             text-transform: uppercase;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         h1 {
-            font-size: 2.5em;
+            font-size: 2.2em;
             color: #2c3e50;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-weight: 600;
             letter-spacing: 1px;
         }
 
         .subtitle {
-            font-size: 1.2em;
+            font-size: 1.1em;
             color: #555;
             font-style: italic;
         }
@@ -68,9 +68,9 @@
         .stats-panel {
             background: linear-gradient(135deg, #ff6b54 0%, #e8604c 100%);
             color: #ffffff;
-            padding: 30px;
+            padding: 25px;
             border-radius: 8px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -83,14 +83,14 @@
         }
 
         .stat-number {
-            font-size: 3em;
+            font-size: 2.8em;
             font-weight: bold;
             display: block;
             margin-bottom: 5px;
         }
 
         .stat-label {
-            font-size: 1em;
+            font-size: 0.95em;
             text-transform: uppercase;
             letter-spacing: 1px;
             font-family: 'Arial', sans-serif;
@@ -98,11 +98,11 @@
 
         .controls {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         .refresh-button {
-            padding: 12px 30px;
+            padding: 10px 25px;
             font-size: 1em;
             background: linear-gradient(135deg, #ff6b54 0%, #e8604c 100%);
             color: #ffffff;
@@ -123,7 +123,7 @@
         }
 
         .auto-refresh {
-            margin-top: 15px;
+            margin-top: 12px;
             color: #2c3e50;
             font-family: 'Arial', sans-serif;
         }
@@ -133,104 +133,174 @@
             cursor: pointer;
         }
 
-        .stage {
-            background: linear-gradient(to bottom, #2c3e50, #34495e);
-            padding: 25px;
-            text-align: center;
-            margin-bottom: 40px;
-            border-radius: 4px;
-            font-weight: 600;
-            color: #ffffff;
-            font-size: 22px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-            border: 2px solid #ff6b54;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            font-family: 'Arial', sans-serif;
+        /* ===== Venue Layout: 4 bloques + estrado ===== */
+        .venue-layout {
+            overflow-x: auto;
+            margin-bottom: 30px;
+            padding: 10px 0;
         }
 
-        .theater-layout {
+        .venue-label {
+            text-align: center;
+            font-family: 'Georgia', serif;
+            font-size: 1.1em;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .blocks-row {
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            gap: 12px;
+            min-width: fit-content;
+            padding: 10px;
+        }
+
+        .block-panel {
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 10px;
+            flex-shrink: 0;
+            transition: border-color 0.3s;
+        }
+
+        .block-panel:hover {
+            border-color: #ff6b54;
+        }
+
+        .block-header {
+            text-align: center;
+            font-family: 'Georgia', serif;
+            font-size: 1em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ff6b54;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .block-stats {
+            display: inline-block;
+            background: #ff6b54;
+            color: #ffffff;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-family: 'Arial', sans-serif;
+            font-weight: 700;
+            min-width: 65px;
+            text-align: center;
+        }
+
+        .block-grid {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            align-items: center;
-            position: relative;
+            gap: 3px;
         }
 
-        .row-container {
+        .block-row {
             display: flex;
+            gap: 2px;
             align-items: center;
-            gap: 15px;
         }
 
         .row-label {
-            font-weight: 600;
-            font-size: 18px;
-            color: #2c3e50;
-            width: 30px;
+            font-size: 0.7em;
+            color: #999;
+            width: 16px;
             text-align: right;
-            font-family: 'Georgia', serif;
+            margin-right: 4px;
+            font-family: 'Arial', sans-serif;
+            flex-shrink: 0;
+            font-weight: 600;
         }
 
-        .row {
-            display: flex;
-            gap: 40px;
-            justify-content: center;
-        }
-
-        .section {
-            display: flex;
-            gap: 6px;
-            padding: 5px;
-            background: rgba(255, 107, 84, 0.08);
-            border-radius: 4px;
-        }
-
+        /* Seats: 16px para que quepan 4 bloques horizontalmente */
         .seat {
-            width: 30px;
-            height: 30px;
+            width: 16px;
+            height: 16px;
             background: #f5f5f5;
-            border: 2px solid #8b7355;
-            border-radius: 6px 6px 2px 2px;
+            border: 1.5px solid #8b7355;
+            border-radius: 3px 3px 1px 1px;
             position: relative;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s;
+            transition: all 0.2s;
+            cursor: default;
         }
 
         .seat::after {
             content: '';
             position: absolute;
-            bottom: -3px;
+            bottom: -2px;
             left: 50%;
             transform: translateX(-50%);
             width: 60%;
-            height: 3px;
+            height: 2px;
             background: #8b7355;
-            border-radius: 0 0 2px 2px;
+            border-radius: 0 0 1px 1px;
         }
 
         .seat.occupied {
             background: #c41e3a;
             border-color: #8b0000;
-            box-shadow: 0 4px 12px rgba(196, 30, 58, 0.5);
-            animation: pulse 0.5s;
+            box-shadow: 0 2px 6px rgba(196, 30, 58, 0.5);
         }
 
         .seat.occupied::after {
             background: #8b0000;
         }
 
-        @keyframes pulse {
+        .seat:hover {
+            transform: scale(1.8);
+            z-index: 100;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes seatPulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.15); }
         }
 
+        .seat.just-occupied {
+            animation: seatPulse 0.5s;
+        }
+
+        /* Estrado central vertical */
+        .stage-center {
+            background: linear-gradient(to bottom, #2c3e50, #34495e);
+            color: #ffffff;
+            writing-mode: vertical-lr;
+            text-orientation: mixed;
+            padding: 20px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-family: 'Arial', sans-serif;
+            border: 2px solid #ff6b54;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Leyenda */
         .legend {
             display: flex;
             justify-content: center;
             gap: 40px;
-            margin-top: 40px;
-            padding: 25px;
+            margin-top: 25px;
+            padding: 20px;
             background: #ffffff;
             border-radius: 4px;
             border: 2px solid #e8e8e8;
@@ -239,16 +309,16 @@
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 16px;
+            gap: 10px;
+            font-size: 14px;
             font-family: 'Arial', sans-serif;
             color: #2c3e50;
         }
 
         .legend-seat {
-            width: 30px;
-            height: 30px;
-            border-radius: 6px 6px 2px 2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px 4px 2px 2px;
             border: 2px solid;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         }
@@ -263,27 +333,28 @@
             border-color: #8b0000;
         }
 
+        /* Lista de usuarios logueados */
         .logged-users-list {
             background: #ffffff;
             border: 2px solid #e8e8e8;
             border-radius: 8px;
             padding: 25px;
-            margin-top: 30px;
-            max-height: 300px;
+            margin-top: 25px;
+            max-height: 350px;
             overflow-y: auto;
         }
 
         .logged-users-list h3 {
             color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 1.5em;
+            margin-bottom: 15px;
+            font-size: 1.3em;
             font-family: 'Georgia', serif;
         }
 
         .user-entry {
-            padding: 12px;
+            padding: 10px 12px;
             background: #f8f9fa;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             border-radius: 4px;
             display: flex;
             justify-content: space-between;
@@ -293,37 +364,105 @@
 
         .user-info {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
         }
 
         .user-name {
             font-weight: 600;
             color: #2c3e50;
-            font-size: 1.1em;
+            font-size: 1em;
         }
 
         .user-code {
             color: #666;
             font-family: 'Courier New', monospace;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
 
         .user-seat {
             background: #ff6b54;
             color: white;
-            padding: 5px 15px;
+            padding: 4px 12px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 1.1em;
+            font-size: 1em;
+        }
+
+        .user-time {
+            color: #999;
+            font-size: 0.8em;
+            font-family: 'Arial', sans-serif;
         }
 
         .last-update {
             text-align: center;
             color: #666;
             font-size: 0.9em;
-            margin-top: 20px;
+            margin-top: 15px;
             font-family: 'Arial', sans-serif;
+        }
+
+        /* Tooltip personalizado */
+        .seat-tooltip {
+            display: none;
+            position: fixed;
+            background: #2c3e50;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Arial', sans-serif;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .seat-tooltip .tooltip-name {
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .seat-tooltip .tooltip-code {
+            color: #bbb;
+            font-family: 'Courier New', monospace;
+        }
+
+        .seat-tooltip .tooltip-seat {
+            color: #ff6b54;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .seat {
+                width: 14px;
+                height: 14px;
+            }
+            .block-panel {
+                padding: 10px 8px;
+            }
+            .blocks-row {
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .seat {
+                width: 12px;
+                height: 12px;
+            }
+            .block-panel {
+                padding: 8px 6px;
+            }
+            .block-header {
+                font-size: 0.9em;
+            }
+            .row-label {
+                width: 14px;
+                font-size: 0.6em;
+            }
         }
     </style>
 </head>
@@ -331,7 +470,7 @@
     <div class="container">
         <div class="header">
             <div class="university-logo">VISOR EN TIEMPO REAL - GRADUACIÓN 2025</div>
-            <h1>📊 Panel de Control</h1>
+            <h1>Panel de Control</h1>
             <p class="subtitle">Seguimiento de asistentes logueados</p>
         </div>
 
@@ -341,7 +480,7 @@
                 <span class="stat-label">Usuarios Logueados</span>
             </div>
             <div class="stat-item">
-                <span class="stat-number" id="totalSeats">406</span>
+                <span class="stat-number" id="totalSeats">588</span>
                 <span class="stat-label">Asientos Totales</span>
             </div>
             <div class="stat-item">
@@ -351,7 +490,7 @@
         </div>
 
         <div class="controls">
-            <button class="refresh-button" onclick="loadLoggedUsers()">🔄 Actualizar Ahora</button>
+            <button class="refresh-button" onclick="loadLoggedUsers()">Actualizar Ahora</button>
             <div class="auto-refresh">
                 <label>
                     <input type="checkbox" id="autoRefreshCheck" checked onchange="toggleAutoRefresh()">
@@ -360,9 +499,45 @@
             </div>
         </div>
 
-        <div class="stage">ESCENARIO</div>
+        <!-- Layout por bloques -->
+        <div class="venue-layout">
+            <div class="venue-label">Tribunas - Graduandos</div>
+            <div class="blocks-row">
+                <div class="block-panel" data-block="A">
+                    <div class="block-header">
+                        Bloque A
+                        <span class="block-stats" id="statsA">0/147</span>
+                    </div>
+                    <div class="block-grid" id="blockGridA"></div>
+                </div>
 
-        <div class="theater-layout" id="theaterLayout"></div>
+                <div class="block-panel" data-block="B">
+                    <div class="block-header">
+                        Bloque B
+                        <span class="block-stats" id="statsB">0/147</span>
+                    </div>
+                    <div class="block-grid" id="blockGridB"></div>
+                </div>
+
+                <div class="stage-center">ESTRADO</div>
+
+                <div class="block-panel" data-block="C">
+                    <div class="block-header">
+                        Bloque C
+                        <span class="block-stats" id="statsC">0/147</span>
+                    </div>
+                    <div class="block-grid" id="blockGridC"></div>
+                </div>
+
+                <div class="block-panel" data-block="D">
+                    <div class="block-header">
+                        Bloque D
+                        <span class="block-stats" id="statsD">0/147</span>
+                    </div>
+                    <div class="block-grid" id="blockGridD"></div>
+                </div>
+            </div>
+        </div>
 
         <div class="legend">
             <div class="legend-item">
@@ -376,97 +551,112 @@
         </div>
 
         <div class="logged-users-list">
-            <h3>👥 Usuarios Logueados</h3>
+            <h3>Usuarios Logueados</h3>
             <div id="usersList"></div>
         </div>
 
         <div class="last-update" id="lastUpdate">Última actualización: --:--:--</div>
     </div>
 
+    <!-- Tooltip flotante -->
+    <div class="seat-tooltip" id="seatTooltip">
+        <div class="tooltip-name"></div>
+        <div class="tooltip-code"></div>
+        <div class="tooltip-seat"></div>
+    </div>
+
     <script>
-        // Configuración del teatro: 14 filas (A-N)
-        const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
-        
-        // Configuración de asientos por sección en cada fila
-        const seatingConfig = [
-            [6, 14, 8],   // Fila A
-            [7, 14, 8],   // Fila B
-            [7, 14, 8],   // Fila C
-            [8, 14, 8],   // Fila D
-            [8, 14, 8],   // Fila E
-            [8, 14, 8],   // Fila F
-            [8, 14, 8],   // Fila G
-            [8, 14, 8],   // Fila H
-            [8, 14, 8],   // Fila I
-            [8, 13, 8],   // Fila J
-            [8, 13, 8],   // Fila K
-            [7, 11, 7],   // Fila L
-            [6, 10, 6],   // Fila M
-            [6, 10, 6]    // Fila N
-        ];
+        // Configuración de bloques (misma que el sistema de alumnos)
+        const BLOCKS = ['A', 'B', 'C', 'D'];
+        const ROWS_PER_BLOCK = 7;
+        const SEATS_PER_ROW = 21;
+        const SEATS_PER_BLOCK = ROWS_PER_BLOCK * SEATS_PER_ROW; // 147
+        const TOTAL_SEATS = BLOCKS.length * SEATS_PER_BLOCK; // 588
 
         let autoRefreshInterval = null;
         let loggedUsers = [];
+        // Mapa para acceso rápido: seat id -> user data
+        let occupiedSeats = {};
 
-        // Crear el layout del teatro
-        function createTheaterLayout() {
-            const layout = document.getElementById('theaterLayout');
-            layout.innerHTML = '';
-            
-            rows.forEach((row, rowIndex) => {
-                const rowContainer = document.createElement('div');
-                rowContainer.className = 'row-container';
-                
-                const rowLabel = document.createElement('div');
-                rowLabel.className = 'row-label';
-                rowLabel.textContent = row;
-                rowContainer.appendChild(rowLabel);
-                
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                
-                const config = seatingConfig[rowIndex];
-                let seatNumber = 1;
-                
-                // Sección izquierda
-                const leftSection = document.createElement('div');
-                leftSection.className = 'section';
-                for (let i = 0; i < config[0]; i++) {
-                    const seat = createSeat(row, seatNumber++);
-                    leftSection.appendChild(seat);
+        // Crear los grids de los 4 bloques al cargar
+        function createAllBlockGrids() {
+            BLOCKS.forEach(blockLetter => {
+                const grid = document.getElementById(`blockGrid${blockLetter}`);
+                grid.innerHTML = '';
+
+                for (let rowNum = 1; rowNum <= ROWS_PER_BLOCK; rowNum++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'block-row';
+
+                    // Label de fila
+                    const label = document.createElement('div');
+                    label.className = 'row-label';
+                    label.textContent = rowNum;
+                    rowDiv.appendChild(label);
+
+                    // 21 asientos por fila
+                    const startSeat = (rowNum - 1) * SEATS_PER_ROW + 1;
+                    for (let i = 0; i < SEATS_PER_ROW; i++) {
+                        const seatNumber = startSeat + i;
+                        const seatId = `${blockLetter}-${seatNumber}`;
+
+                        const seat = document.createElement('div');
+                        seat.className = 'seat';
+                        seat.dataset.seat = seatId;
+
+                        // Eventos de tooltip
+                        seat.addEventListener('mouseenter', showTooltip);
+                        seat.addEventListener('mouseleave', hideTooltip);
+
+                        rowDiv.appendChild(seat);
+                    }
+
+                    grid.appendChild(rowDiv);
                 }
-                rowDiv.appendChild(leftSection);
-                
-                // Sección central
-                const centerSection = document.createElement('div');
-                centerSection.className = 'section';
-                for (let i = 0; i < config[1]; i++) {
-                    const seat = createSeat(row, seatNumber++);
-                    centerSection.appendChild(seat);
-                }
-                rowDiv.appendChild(centerSection);
-                
-                // Sección derecha
-                const rightSection = document.createElement('div');
-                rightSection.className = 'section';
-                for (let i = 0; i < config[2]; i++) {
-                    const seat = createSeat(row, seatNumber++);
-                    rightSection.appendChild(seat);
-                }
-                rowDiv.appendChild(rightSection);
-                
-                rowContainer.appendChild(rowDiv);
-                layout.appendChild(rowContainer);
             });
         }
 
-        // Crear un asiento individual
-        function createSeat(row, number) {
-            const seat = document.createElement('div');
-            seat.className = 'seat';
-            seat.dataset.seat = `${row}${number}`;
-            seat.title = `Asiento ${row}${number}`;
-            return seat;
+        // Tooltip personalizado
+        const tooltip = document.getElementById('seatTooltip');
+
+        function showTooltip(e) {
+            const seatId = e.target.dataset.seat;
+            if (!seatId) return;
+
+            const user = occupiedSeats[seatId];
+            const block = seatId.split('-')[0];
+            const seatNum = parseInt(seatId.split('-')[1]);
+            const row = Math.ceil(seatNum / SEATS_PER_ROW);
+
+            if (user) {
+                tooltip.querySelector('.tooltip-name').textContent = user.name;
+                tooltip.querySelector('.tooltip-code').textContent = user.code.toUpperCase();
+                tooltip.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
+            } else {
+                tooltip.querySelector('.tooltip-name').textContent = 'Disponible';
+                tooltip.querySelector('.tooltip-code').textContent = '';
+                tooltip.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
+            }
+
+            tooltip.style.display = 'block';
+            positionTooltip(e);
+        }
+
+        function positionTooltip(e) {
+            const x = e.clientX + 15;
+            const y = e.clientY - 10;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (tooltip.style.display === 'block') {
+                positionTooltip(e);
+            }
+        });
+
+        function hideTooltip() {
+            tooltip.style.display = 'none';
         }
 
         // Cargar registros de asistencia desde el servidor
@@ -488,23 +678,41 @@
         function updateDisplay() {
             // Limpiar asientos ocupados
             document.querySelectorAll('.seat.occupied').forEach(seat => {
-                seat.classList.remove('occupied');
+                seat.classList.remove('occupied', 'just-occupied');
             });
-            
-            // Marcar asientos ocupados
+
+            // Construir mapa de asientos ocupados y contadores por bloque
+            const blockCounts = { A: 0, B: 0, C: 0, D: 0 };
+            occupiedSeats = {};
+
             loggedUsers.forEach(user => {
+                occupiedSeats[user.seat] = user;
+
+                // Marcar asiento en el DOM
                 const seatElement = document.querySelector(`[data-seat="${user.seat}"]`);
                 if (seatElement) {
                     seatElement.classList.add('occupied');
-                    seatElement.title = `${user.name} - ${user.code.toUpperCase()}`;
+                }
+
+                // Contar por bloque
+                if (blockCounts.hasOwnProperty(user.block)) {
+                    blockCounts[user.block]++;
                 }
             });
-            
-            // Actualizar estadísticas
+
+            // Actualizar stats por bloque
+            BLOCKS.forEach(b => {
+                const statsEl = document.getElementById(`stats${b}`);
+                if (statsEl) {
+                    statsEl.textContent = `${blockCounts[b]}/${SEATS_PER_BLOCK}`;
+                }
+            });
+
+            // Actualizar estadísticas globales
             document.getElementById('totalLoggedIn').textContent = loggedUsers.length;
-            const percentage = ((loggedUsers.length / 406) * 100).toFixed(1);
+            const percentage = ((loggedUsers.length / TOTAL_SEATS) * 100).toFixed(1);
             document.getElementById('percentageOccupied').textContent = percentage + '%';
-            
+
             // Actualizar lista de usuarios
             updateUsersList();
         }
@@ -512,22 +720,23 @@
         // Actualizar lista de usuarios
         function updateUsersList() {
             const usersList = document.getElementById('usersList');
-            
+
             if (loggedUsers.length === 0) {
                 usersList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay usuarios logueados aún</p>';
                 return;
             }
-            
+
             // Ordenar por hora de login (más recientes primero)
             const sortedUsers = [...loggedUsers].sort((a, b) => {
                 return new Date(b.loginTime) - new Date(a.loginTime);
             });
-            
+
             usersList.innerHTML = sortedUsers.map(user => `
                 <div class="user-entry">
                     <div class="user-info">
                         <span class="user-name">${user.name}</span>
                         <span class="user-code">${user.code.toUpperCase()}</span>
+                        <span class="user-time">${user.loginTime}</span>
                     </div>
                     <span class="user-seat">${user.seat}</span>
                 </div>
@@ -537,10 +746,10 @@
         // Actualizar hora de última actualización
         function updateLastUpdateTime() {
             const now = new Date();
-            const timeString = now.toLocaleTimeString('es-PE', { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
+            const timeString = now.toLocaleTimeString('es-PE', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
             });
             document.getElementById('lastUpdate').textContent = `Última actualización: ${timeString}`;
         }
@@ -548,12 +757,10 @@
         // Toggle auto-refresh
         function toggleAutoRefresh() {
             const isChecked = document.getElementById('autoRefreshCheck').checked;
-            
+
             if (isChecked) {
-                // Iniciar auto-refresh cada 5 segundos
                 autoRefreshInterval = setInterval(loadLoggedUsers, 5000);
             } else {
-                // Detener auto-refresh
                 if (autoRefreshInterval) {
                     clearInterval(autoRefreshInterval);
                     autoRefreshInterval = null;
@@ -562,10 +769,8 @@
         }
 
         // Inicializar
-        createTheaterLayout();
+        createAllBlockGrids();
         loadLoggedUsers();
-        
-        // Iniciar auto-refresh
         toggleAutoRefresh();
     </script>
 </body>

@@ -1185,28 +1185,54 @@
         // Mostrar pantalla de asiento
         async function showSeatingScreen(studentCode, studentData) {
             currentStudentData = studentData;
-            
+
             // Ocultar pantalla de bienvenida
             document.getElementById('welcomeScreen').classList.add('hidden');
-            
-            // Mostrar pantalla de asiento
+
+            // Mostrar pantalla de asiento con estado de carga
             document.getElementById('seatingScreen').classList.add('active');
-            
-            // Actualizar información del estudiante
+
+            // Mostrar información del estudiante con indicador de registro
             document.getElementById('studentName').textContent = studentData.name;
             document.getElementById('seatAssignment').textContent = studentData.seat;
             document.getElementById('rowInfo').textContent = `Fila ${studentData.row} del Bloque ${studentData.block}`;
             document.getElementById('studentCodeDisplay').textContent = `Código: ${studentCode.toUpperCase()}`;
-            
-            // Registrar asistencia en el servidor (y en Google Sheet)
-            fetch('/api/attendance', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: studentCode })
-            }).catch(error => {
+
+            // Mostrar indicador de registro de asistencia
+            const studentInfo = document.getElementById('studentInfo');
+            let statusEl = document.getElementById('attendanceStatus');
+            if (!statusEl) {
+                statusEl = document.createElement('p');
+                statusEl.id = 'attendanceStatus';
+                studentInfo.appendChild(statusEl);
+            }
+            statusEl.style.cssText = 'color: #f0ad4e; font-size: 0.95em; margin-top: 8px;';
+            statusEl.textContent = 'Registrando asistencia...';
+
+            // Registrar asistencia en el servidor (con reintentos en backend)
+            try {
+                const response = await fetch('/api/attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: studentCode })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    statusEl.style.color = '#5cb85c';
+                    statusEl.textContent = 'Asistencia registrada correctamente';
+                    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+                } else {
+                    statusEl.style.color = '#d9534f';
+                    statusEl.innerHTML = 'No se pudo registrar tu asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';
+                }
+            } catch (error) {
                 console.error('Error registrando asistencia:', error);
-            });
-            
+                statusEl.style.color = '#d9534f';
+                statusEl.innerHTML = 'Error de conexión al registrar asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';
+            }
+
             // Crear vista del recinto
             createVenueLayout();
         }

@@ -12,8 +12,8 @@ const PORT = process.env.PORT || 3000;
 const SPREADSHEET_ID = '1MDNAmS98qoUlIJmrX2t2LyHV028J9iG7zoWNyRPJqCw';
 const SHEET_NAME = 'Grad1';
 
-// Registro de asistencia en memoria (para el visor en tiempo real)
-const attendanceMap = new Map();
+// Clientes SSE conectados (para notificar al visor en tiempo real)
+const sseClients = [];
 
 // Cliente de Google Sheets API
 function getSheetsClient() {
@@ -43,7 +43,7 @@ async function fetchStudents() {
         const row = rows[i];
         if (!row || row.length < 7) continue;
 
-        const [codigo, nombres, apellidos, carrera, bloque, fila, asiento, asistencia] = row;
+        const [codigo, nombres, apellidos, carrera, bloque, fila, asiento] = row;
         const code = (codigo || '').trim().toLowerCase();
         if (!code) continue;
 
@@ -59,23 +59,88 @@ async function fetchStudents() {
             carrera: (carrera || '').trim(),
             sheetRow: i + 1 // fila real en la hoja (1-indexed, +1 por encabezado)
         };
-
-        // Recuperar asistencias previas desde la columna H
-        if (asistencia && asistencia.trim()) {
-            attendanceMap.set(code, {
-                code,
-                name: students[code].name,
-                seat: students[code].seat,
-                block: students[code].block,
-                seatNumber: students[code].seatNumber,
-                row: students[code].row,
-                loginTime: asistencia.trim()
-            });
-        }
     }
 
     console.log(`Datos leídos: ${Object.keys(students).length} alumnos desde Google Sheets`);
     return students;
+}
+
+// Obtener asistencias desde Google Sheets (lectura directa de columna H)
+async function fetchAttendanceFromSheet() {
+    const sheets = getSheetsClient();
+    const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAME}!A:H`,
+    });
+
+    const rows = response.data.values || [];
+    if (rows.length < 2) return [];
+
+    const attendees = [];
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length < 8) continue;
+
+        const [codigo, nombres, apellidos, , bloque, fila, asiento, asistencia] = row;
+        if (!asistencia || !asistencia.trim()) continue;
+
+        const code = (codigo || '').trim().toLowerCase();
+        if (!code) continue;
+
+        const seatNumber = parseInt(asiento, 10);
+        const rowNumber = parseInt(fila, 10);
+
+        attendees.push({
+            code,
+            name: `${(nombres || '').trim()} ${(apellidos || '').trim()}`,
+            seat: `${(bloque || '').trim()}-${seatNumber}`,
+            block: (bloque || '').trim(),
+            seatNumber: seatNumber,
+            row: rowNumber,
+            loginTime: asistencia.trim()
+        });
+    }
+
+    return attendees;
+}
+
+// Escribir asistencia en Google Sheet con reintentos
+async function writeAttendanceToSheet(sheetRow, timestamp) {
+    const MAX_RETRIES = 3;
+    const BACKOFF_MS = [1000, 2000, 4000];
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+            const sheets = getSheetsClient();
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `${SHEET_NAME}!H${sheetRow}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: {
+                    values: [[timestamp]]
+                }
+            });
+            return true; // Escritura exitosa
+        } catch (error) {
+            console.error(`Intento ${attempt + 1}/${MAX_RETRIES} falló al escribir en Google Sheet:`, error.message);
+            if (attempt < MAX_RETRIES - 1) {
+                await new Promise(resolve => setTimeout(resolve, BACKOFF_MS[attempt]));
+            }
+        }
+    }
+    return false; // Todos los intentos fallaron
+}
+
+// Notificar a todos los clientes SSE
+function notifySSEClients(eventData) {
+    const data = JSON.stringify(eventData);
+    for (let i = sseClients.length - 1; i >= 0; i--) {
+        try {
+            sseClients[i].write(`event: attendance-update\ndata: ${data}\n\n`);
+        } catch (err) {
+            sseClients.splice(i, 1);
+        }
+    }
 }
 
 // API: Obtener todos los alumnos
@@ -125,30 +190,23 @@ app.post('/api/attendance', async (req, res) => {
 
         const timestamp = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
 
-        // Escribir en Google Sheet columna H
-        try {
-            const sheets = getSheetsClient();
-            await sheets.spreadsheets.values.update({
-                spreadsheetId: SPREADSHEET_ID,
-                range: `${SHEET_NAME}!H${student.sheetRow}`,
-                valueInputOption: 'USER_ENTERED',
-                requestBody: {
-                    values: [[timestamp]]
-                }
+        // Escribir en Google Sheet columna H (con 3 reintentos)
+        const written = await writeAttendanceToSheet(student.sheetRow, timestamp);
+
+        if (!written) {
+            console.error(`No se pudo escribir asistencia en Google Sheet para ${normalizedCode} después de 3 intentos`);
+            return res.status(500).json({
+                success: false,
+                error: 'No se pudo registrar la asistencia. Por favor, intenta loguearte de nuevo.'
             });
-        } catch (sheetError) {
-            console.error('Error escribiendo en Google Sheet (asistencia guardada en memoria):', sheetError.message);
         }
 
-        // Actualizar mapa en memoria (para el visor)
-        attendanceMap.set(normalizedCode, {
+        // Notificar a los visores conectados por SSE
+        notifySSEClients({
             code: normalizedCode,
             name: student.name,
             seat: student.seat,
-            block: student.block,
-            seatNumber: student.seatNumber,
-            row: student.row,
-            loginTime: timestamp
+            timestamp
         });
 
         console.log(`Asistencia registrada: ${student.name} (${normalizedCode}) -> ${student.seat} a las ${timestamp}`);
@@ -159,12 +217,40 @@ app.post('/api/attendance', async (req, res) => {
     }
 });
 
-// API: Obtener registros de asistencia (para el visor)
-app.get('/api/attendance', (req, res) => {
-    const students = Array.from(attendanceMap.values());
-    res.json({
-        count: students.length,
-        students: students
+// API: Obtener registros de asistencia desde Google Sheets (para el visor)
+app.get('/api/attendance', async (req, res) => {
+    try {
+        const attendees = await fetchAttendanceFromSheet();
+        res.json({
+            count: attendees.length,
+            students: attendees
+        });
+    } catch (error) {
+        console.error('Error al obtener asistencia desde Google Sheets:', error);
+        res.status(500).json({ count: 0, students: [], error: 'Error al leer asistencia' });
+    }
+});
+
+// SSE: Endpoint para eventos en tiempo real (visor)
+app.get('/api/attendance/events', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
+
+    // Enviar comentario inicial para establecer conexión
+    res.write(':connected\n\n');
+
+    sseClients.push(res);
+    console.log(`Visor SSE conectado. Total clientes: ${sseClients.length}`);
+
+    req.on('close', () => {
+        const index = sseClients.indexOf(res);
+        if (index !== -1) {
+            sseClients.splice(index, 1);
+        }
+        console.log(`Visor SSE desconectado. Total clientes: ${sseClients.length}`);
     });
 });
 

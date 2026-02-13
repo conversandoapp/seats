@@ -469,34 +469,18 @@
             return seat;
         }
 
-        // Cargar usuarios logueados desde el almacenamiento
+        // Cargar registros de asistencia desde el servidor
         async function loadLoggedUsers() {
             try {
-                // Obtener la lista de usuarios logueados del almacenamiento compartido
-                const result = await window.storage.list('logged_user:', true);
-                
-                if (result && result.keys) {
-                    loggedUsers = [];
-                    
-                    // Obtener datos de cada usuario
-                    for (const key of result.keys) {
-                        try {
-                            const userData = await window.storage.get(key, true);
-                            if (userData && userData.value) {
-                                const user = JSON.parse(userData.value);
-                                loggedUsers.push(user);
-                            }
-                        } catch (e) {
-                            console.error('Error loading user:', e);
-                        }
-                    }
-                    
-                    updateDisplay();
-                }
+                const response = await fetch('/api/attendance');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                loggedUsers = data.students || [];
+                updateDisplay();
             } catch (error) {
-                console.error('Error loading logged users:', error);
+                console.error('Error loading attendance data:', error);
             }
-            
+
             updateLastUpdateTime();
         }
 

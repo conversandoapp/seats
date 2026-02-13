@@ -1,6 +1,9 @@
 const express = require('express');
 const path = require('path');
+const { google } = require('googleapis');
 const app = express();
+
+app.use(express.json());
 
 // Puerto que usará Render
 const PORT = process.env.PORT || 3000;
@@ -8,95 +11,74 @@ const PORT = process.env.PORT || 3000;
 // Configuración de Google Sheets
 const SPREADSHEET_ID = '1MDNAmS98qoUlIJmrX2t2LyHV028J9iG7zoWNyRPJqCw';
 const SHEET_NAME = 'Grad1';
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
 
-// Cache de datos de alumnos
-let studentCache = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+// Registro de asistencia en memoria (para el visor en tiempo real)
+const attendanceMap = new Map();
 
-// Parser simple de CSV
-function parseCSV(text) {
-    const lines = text.split('\n');
-    const result = [];
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        const row = [];
-        let inQuotes = false;
-        let current = '';
-
-        for (let j = 0; j < line.length; j++) {
-            const char = line[j];
-            if (char === '"') {
-                if (inQuotes && j + 1 < line.length && line[j + 1] === '"') {
-                    current += '"';
-                    j++;
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (char === ',' && !inQuotes) {
-                row.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        row.push(current.trim());
-        result.push(row);
-    }
-
-    return result;
+// Cliente de Google Sheets API
+function getSheetsClient() {
+    const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+    const auth = new google.auth.GoogleAuth({
+        credentials,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
+    return google.sheets({ version: 'v4', auth });
 }
 
-// Obtener datos de alumnos desde Google Sheets
+// Obtener datos de alumnos desde Google Sheets (lectura directa, sin cache)
 async function fetchStudents() {
-    const now = Date.now();
-    if (studentCache && (now - cacheTimestamp) < CACHE_DURATION) {
-        return studentCache;
-    }
+    const sheets = getSheetsClient();
+    const response = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAME}!A:H`,
+    });
 
-    const response = await fetch(CSV_URL);
-    if (!response.ok) {
-        throw new Error(`Error al obtener spreadsheet: ${response.status}`);
-    }
+    const rows = response.data.values || [];
+    if (rows.length < 2) return {};
 
-    const text = await response.text();
-    const rows = parseCSV(text);
-
-    // Columnas: CODIGO, NOMBRES, APELLIDOS, CARRERA, BLOQUE, FILA, ASIENTO
+    // Fila 0 = encabezados, filas 1+ = datos
+    // Columnas: CODIGO, NOMBRES, APELLIDOS, CARRERA, BLOQUE, FILA, ASIENTO, ASISTENCIA
     const students = {};
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        if (row.length < 7) continue;
+        if (!row || row.length < 7) continue;
 
-        const [codigo, nombres, apellidos, carrera, bloque, fila, asiento] = row;
-        const code = codigo.trim().toLowerCase();
+        const [codigo, nombres, apellidos, carrera, bloque, fila, asiento, asistencia] = row;
+        const code = (codigo || '').trim().toLowerCase();
         if (!code) continue;
 
         const seatNumber = parseInt(asiento, 10);
         const rowNumber = parseInt(fila, 10);
 
         students[code] = {
-            name: `${nombres.trim()} ${apellidos.trim()}`,
-            seat: `${bloque.trim()}-${seatNumber}`,
-            block: bloque.trim(),
+            name: `${(nombres || '').trim()} ${(apellidos || '').trim()}`,
+            seat: `${(bloque || '').trim()}-${seatNumber}`,
+            block: (bloque || '').trim(),
             seatNumber: seatNumber,
             row: rowNumber,
-            carrera: carrera.trim()
+            carrera: (carrera || '').trim(),
+            sheetRow: i + 1 // fila real en la hoja (1-indexed, +1 por encabezado)
         };
+
+        // Recuperar asistencias previas desde la columna H
+        if (asistencia && asistencia.trim()) {
+            attendanceMap.set(code, {
+                code,
+                name: students[code].name,
+                seat: students[code].seat,
+                block: students[code].block,
+                seatNumber: students[code].seatNumber,
+                row: students[code].row,
+                loginTime: asistencia.trim()
+            });
+        }
     }
 
-    studentCache = students;
-    cacheTimestamp = now;
-    console.log(`Datos cargados: ${Object.keys(students).length} alumnos desde Google Sheets`);
-
+    console.log(`Datos leídos: ${Object.keys(students).length} alumnos desde Google Sheets`);
     return students;
 }
 
-// API endpoint para datos de alumnos
+// API: Obtener todos los alumnos
 app.get('/api/students', async (req, res) => {
     try {
         const students = await fetchStudents();
@@ -105,6 +87,85 @@ app.get('/api/students', async (req, res) => {
         console.error('Error al cargar datos de alumnos:', error);
         res.status(500).json({ error: 'Error al cargar datos de alumnos desde Google Sheets' });
     }
+});
+
+// API: Buscar un alumno por código (tiempo real)
+app.get('/api/students/:code', async (req, res) => {
+    try {
+        const code = req.params.code.trim().toLowerCase();
+        const students = await fetchStudents();
+        const student = students[code];
+
+        if (!student) {
+            return res.status(404).json({ error: 'Código de alumno no encontrado' });
+        }
+
+        res.json(student);
+    } catch (error) {
+        console.error('Error al buscar alumno:', error);
+        res.status(500).json({ error: 'Error al buscar alumno en Google Sheets' });
+    }
+});
+
+// API: Registrar asistencia
+app.post('/api/attendance', async (req, res) => {
+    try {
+        const { code } = req.body;
+        if (!code) {
+            return res.status(400).json({ success: false, error: 'Campo requerido: code' });
+        }
+
+        const normalizedCode = code.trim().toLowerCase();
+        const students = await fetchStudents();
+        const student = students[normalizedCode];
+
+        if (!student) {
+            return res.status(404).json({ success: false, error: 'Alumno no encontrado' });
+        }
+
+        const timestamp = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+
+        // Escribir en Google Sheet columna H
+        try {
+            const sheets = getSheetsClient();
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `${SHEET_NAME}!H${student.sheetRow}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: {
+                    values: [[timestamp]]
+                }
+            });
+        } catch (sheetError) {
+            console.error('Error escribiendo en Google Sheet (asistencia guardada en memoria):', sheetError.message);
+        }
+
+        // Actualizar mapa en memoria (para el visor)
+        attendanceMap.set(normalizedCode, {
+            code: normalizedCode,
+            name: student.name,
+            seat: student.seat,
+            block: student.block,
+            seatNumber: student.seatNumber,
+            row: student.row,
+            loginTime: timestamp
+        });
+
+        console.log(`Asistencia registrada: ${student.name} (${normalizedCode}) -> ${student.seat} a las ${timestamp}`);
+        res.json({ success: true, timestamp });
+    } catch (error) {
+        console.error('Error registrando asistencia:', error);
+        res.status(500).json({ success: false, error: 'Error interno del servidor' });
+    }
+});
+
+// API: Obtener registros de asistencia (para el visor)
+app.get('/api/attendance', (req, res) => {
+    const students = Array.from(attendanceMap.values());
+    res.json({
+        count: students.length,
+        students: students
+    });
 });
 
 // Servir archivos estáticos

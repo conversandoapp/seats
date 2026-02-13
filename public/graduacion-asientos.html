@@ -1142,33 +1142,13 @@
     </div>
 
     <script>
-        // Base de datos de alumnos (se carga desde Google Sheets)
-        let studentDatabase = {};
-        let dataLoaded = false;
-
-        // Cargar datos de alumnos desde el servidor
-        async function loadStudentData() {
-            try {
-                const response = await fetch('/api/students');
-                if (!response.ok) throw new Error('Error al cargar datos');
-                studentDatabase = await response.json();
-                dataLoaded = true;
-                console.log(`Datos cargados: ${Object.keys(studentDatabase).length} alumnos`);
-            } catch (error) {
-                console.error('Error cargando datos de alumnos:', error);
-            }
-        }
-
-        // Cargar datos al iniciar la página
-        loadStudentData();
-
         const ROWS_PER_BLOCK = 7;
         const SEATS_PER_ROW = 21;
         const BLOCKS = ['A', 'B', 'C', 'D'];
 
         let currentStudentData = null;
 
-        // Buscar asiento por código de alumno
+        // Buscar asiento por código de alumno (consulta en tiempo real)
         async function findSeat() {
             const input = document.getElementById('studentCode').value.trim().toLowerCase();
             const errorDiv = document.getElementById('errorMessage');
@@ -1180,20 +1160,25 @@
                 return;
             }
 
-            if (!dataLoaded) {
-                errorDiv.innerHTML = '<p class="error-message">Cargando datos, por favor espera un momento...</p>';
-                await loadStudentData();
-                if (!dataLoaded) {
-                    errorDiv.innerHTML = '<p class="error-message">No se pudieron cargar los datos. Intenta recargar la página.</p>';
+            errorDiv.innerHTML = '<p class="error-message" style="color: #999;">Buscando...</p>';
+
+            try {
+                const response = await fetch(`/api/students/${encodeURIComponent(input)}`);
+
+                if (response.status === 404) {
+                    errorDiv.innerHTML = '<p class="error-message">Código de alumno no encontrado. Verifica tu código.</p>';
                     return;
                 }
-            }
 
-            if (studentDatabase[input]) {
-                const studentData = studentDatabase[input];
+                if (!response.ok) {
+                    throw new Error(`Error del servidor: ${response.status}`);
+                }
+
+                const studentData = await response.json();
                 await showSeatingScreen(input, studentData);
-            } else {
-                errorDiv.innerHTML = '<p class="error-message">Código de alumno no encontrado. Verifica tu código.</p>';
+            } catch (error) {
+                console.error('Error buscando alumno:', error);
+                errorDiv.innerHTML = '<p class="error-message">Error al buscar. Intenta nuevamente.</p>';
             }
         }
 
@@ -1213,26 +1198,14 @@
             document.getElementById('rowInfo').textContent = `Fila ${studentData.row} del Bloque ${studentData.block}`;
             document.getElementById('studentCodeDisplay').textContent = `Código: ${studentCode.toUpperCase()}`;
             
-            // Registrar usuario en el almacenamiento compartido
-            try {
-                const userData = {
-                    code: studentCode,
-                    name: studentData.name,
-                    seat: studentData.seat,
-                    block: studentData.block,
-                    seatNumber: studentData.seatNumber,
-                    row: studentData.row,
-                    loginTime: new Date().toISOString()
-                };
-                
-                await window.storage.set(
-                    `logged_user:${studentCode}`, 
-                    JSON.stringify(userData), 
-                    true
-                );
-            } catch (error) {
-                console.error('Error registering user:', error);
-            }
+            // Registrar asistencia en el servidor (y en Google Sheet)
+            fetch('/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: studentCode })
+            }).catch(error => {
+                console.error('Error registrando asistencia:', error);
+            });
             
             // Crear vista del recinto
             createVenueLayout();

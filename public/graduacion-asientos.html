@@ -994,6 +994,7 @@
             <div class="university-logo">CEREMONIA DE GRADUACIÓN 2025</div>
             <div class="graduation-icon">🎓</div>
             <h1>Bienvenido a tu Graduación</h1>
+            <div id="todayDateDisplay" style="font-size: 0.95em; color: #666; margin-bottom: 10px; font-family: Arial, sans-serif;"></div>
             <p class="subtitle">Por favor indícanos tu código de alumno para ubicarte</p>
             
             <div class="input-section">
@@ -1148,7 +1149,27 @@
 
         let currentStudentData = null;
 
-        // Buscar asiento por código de alumno (consulta en tiempo real)
+        // Obtener la fecha de hoy en formato dd-mm-yyyy (zona horaria Perú)
+        function getTodayDate() {
+            const formatter = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'America/Lima',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            return formatter.format(new Date()).replace(/\//g, '-');
+        }
+
+        // Mostrar fecha de hoy al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateDisplay = document.getElementById('todayDateDisplay');
+            if (dateDisplay) {
+                const today = getTodayDate();
+                dateDisplay.textContent = `Fecha de ceremonia: ${today}`;
+            }
+        });
+
+        // Buscar asiento por código de alumno (consulta en tiempo real, hoja de hoy)
         async function findSeat() {
             const input = document.getElementById('studentCode').value.trim().toLowerCase();
             const errorDiv = document.getElementById('errorMessage');
@@ -1163,10 +1184,16 @@
             errorDiv.innerHTML = '<p class="error-message" style="color: #999;">Buscando...</p>';
 
             try {
-                const response = await fetch(`/api/students/${encodeURIComponent(input)}`);
+                const todayDate = getTodayDate();
+                const response = await fetch(`/api/students/${encodeURIComponent(input)}?date=${todayDate}`);
 
                 if (response.status === 404) {
-                    errorDiv.innerHTML = '<p class="error-message">Código de alumno no encontrado. Verifica tu código.</p>';
+                    const errorData = await response.json();
+                    if (errorData.noSheet) {
+                        errorDiv.innerHTML = '<p class="error-message">No hay ceremonia de graduación programada para hoy.</p>';
+                    } else {
+                        errorDiv.innerHTML = '<p class="error-message">Código de alumno no encontrado. Verifica tu código.</p>';
+                    }
                     return;
                 }
 

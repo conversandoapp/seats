@@ -10,9 +10,25 @@ const PORT = process.env.PORT || 3000;
 
 // Configuración de Google Sheets
 const SPREADSHEET_ID = '1MDNAmS98qoUlIJmrX2t2LyHV028J9iG7zoWNyRPJqCw';
-const SHEET_NAME = 'Grad1';
+
+// Obtener la fecha de hoy como nombre de hoja (dd-mm-yyyy) en zona horaria de Perú
+function getTodaySheetName() {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'America/Lima',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+    return formatter.format(new Date()).replace(/\//g, '-');
+}
+
+// Validar que un nombre de hoja tenga formato dd-mm-yyyy
+function isValidSheetDate(sheetName) {
+    return /^\d{2}-\d{2}-\d{4}$/.test(sheetName);
+}
 
 // Clientes SSE conectados (para notificar al visor en tiempo real)
+// Cada elemento: { res, date }
 const sseClients = [];
 
 // Cliente de Google Sheets API
@@ -26,11 +42,11 @@ function getSheetsClient() {
 }
 
 // Obtener datos de alumnos desde Google Sheets (lectura directa, sin cache)
-async function fetchStudents() {
+async function fetchStudents(sheetName) {
     const sheets = getSheetsClient();
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A:H`,
+        range: `${sheetName}!A:H`,
     });
 
     const rows = response.data.values || [];
@@ -66,11 +82,11 @@ async function fetchStudents() {
 }
 
 // Obtener asistencias desde Google Sheets (lectura directa de columna H)
-async function fetchAttendanceFromSheet() {
+async function fetchAttendanceFromSheet(sheetName) {
     const sheets = getSheetsClient();
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A:H`,
+        range: `${sheetName}!A:H`,
     });
 
     const rows = response.data.values || [];
@@ -105,7 +121,7 @@ async function fetchAttendanceFromSheet() {
 }
 
 // Escribir asistencia en Google Sheet con reintentos
-async function writeAttendanceToSheet(sheetRow, timestamp) {
+async function writeAttendanceToSheet(sheetName, sheetRow, timestamp) {
     const MAX_RETRIES = 3;
     const BACKOFF_MS = [1000, 2000, 4000];
 
@@ -114,7 +130,7 @@ async function writeAttendanceToSheet(sheetRow, timestamp) {
             const sheets = getSheetsClient();
             await sheets.spreadsheets.values.update({
                 spreadsheetId: SPREADSHEET_ID,
-                range: `${SHEET_NAME}!H${sheetRow}`,
+                range: `${sheetName}!H${sheetRow}`,
                 valueInputOption: 'USER_ENTERED',
                 requestBody: {
                     values: [[timestamp]]
@@ -131,34 +147,76 @@ async function writeAttendanceToSheet(sheetRow, timestamp) {
     return false; // Todos los intentos fallaron
 }
 
-// Notificar a todos los clientes SSE
+// Notificar a clientes SSE (solo a los que estén viendo la misma fecha)
 function notifySSEClients(eventData) {
     const data = JSON.stringify(eventData);
     for (let i = sseClients.length - 1; i >= 0; i--) {
         try {
-            sseClients[i].write(`event: attendance-update\ndata: ${data}\n\n`);
+            if (sseClients[i].date === eventData.date) {
+                sseClients[i].res.write(`event: attendance-update\ndata: ${data}\n\n`);
+            }
         } catch (err) {
             sseClients.splice(i, 1);
         }
     }
 }
 
-// API: Obtener todos los alumnos
+// API: Listar todas las hojas con formato de fecha del spreadsheet
+app.get('/api/sheets', async (req, res) => {
+    try {
+        const sheets = getSheetsClient();
+        const response = await sheets.spreadsheets.get({
+            spreadsheetId: SPREADSHEET_ID,
+            fields: 'sheets.properties.title'
+        });
+
+        const sheetNames = response.data.sheets.map(s => s.properties.title);
+        const dateSheets = sheetNames.filter(name => isValidSheetDate(name));
+
+        res.json({ sheets: dateSheets });
+    } catch (error) {
+        console.error('Error al obtener lista de hojas:', error);
+        res.status(500).json({ error: 'Error al obtener lista de hojas' });
+    }
+});
+
+// API: Obtener todos los alumnos (con fecha opcional, default: hoy)
 app.get('/api/students', async (req, res) => {
     try {
-        const students = await fetchStudents();
+        const sheetName = req.query.date || getTodaySheetName();
+
+        if (!isValidSheetDate(sheetName)) {
+            return res.status(400).json({ error: 'Formato de fecha inválido. Use dd-mm-yyyy.' });
+        }
+
+        const students = await fetchStudents(sheetName);
         res.json(students);
     } catch (error) {
         console.error('Error al cargar datos de alumnos:', error);
+
+        if (error.message && error.message.includes('Unable to parse range')) {
+            return res.status(404).json({
+                error: 'No se encontró hoja para la fecha indicada',
+                noSheet: true,
+                sheetName: req.query.date || getTodaySheetName()
+            });
+        }
+
         res.status(500).json({ error: 'Error al cargar datos de alumnos desde Google Sheets' });
     }
 });
 
-// API: Buscar un alumno por código (tiempo real)
+// API: Buscar un alumno por código (con fecha opcional, default: hoy)
 app.get('/api/students/:code', async (req, res) => {
     try {
         const code = req.params.code.trim().toLowerCase();
-        const students = await fetchStudents();
+        const sheetName = req.query.date || getTodaySheetName();
+
+        if (!isValidSheetDate(sheetName)) {
+            return res.status(400).json({ error: 'Formato de fecha inválido. Use dd-mm-yyyy.' });
+        }
+
+        const students = await fetchStudents(sheetName);
         const student = students[code];
 
         if (!student) {
@@ -168,11 +226,19 @@ app.get('/api/students/:code', async (req, res) => {
         res.json(student);
     } catch (error) {
         console.error('Error al buscar alumno:', error);
+
+        if (error.message && error.message.includes('Unable to parse range')) {
+            return res.status(404).json({
+                error: 'No hay ceremonia de graduación programada para hoy',
+                noSheet: true
+            });
+        }
+
         res.status(500).json({ error: 'Error al buscar alumno en Google Sheets' });
     }
 });
 
-// API: Registrar asistencia
+// API: Registrar asistencia (siempre en la hoja de hoy)
 app.post('/api/attendance', async (req, res) => {
     try {
         const { code } = req.body;
@@ -180,8 +246,11 @@ app.post('/api/attendance', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Campo requerido: code' });
         }
 
+        // La asistencia siempre se registra en la hoja de hoy
+        const sheetName = getTodaySheetName();
+
         const normalizedCode = code.trim().toLowerCase();
-        const students = await fetchStudents();
+        const students = await fetchStudents(sheetName);
         const student = students[normalizedCode];
 
         if (!student) {
@@ -191,7 +260,7 @@ app.post('/api/attendance', async (req, res) => {
         const timestamp = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
 
         // Escribir en Google Sheet columna H (con 3 reintentos)
-        const written = await writeAttendanceToSheet(student.sheetRow, timestamp);
+        const written = await writeAttendanceToSheet(sheetName, student.sheetRow, timestamp);
 
         if (!written) {
             console.error(`No se pudo escribir asistencia en Google Sheet para ${normalizedCode} después de 3 intentos`);
@@ -201,52 +270,78 @@ app.post('/api/attendance', async (req, res) => {
             });
         }
 
-        // Notificar a los visores conectados por SSE
+        // Notificar a los visores conectados por SSE (incluye fecha para filtrar)
         notifySSEClients({
             code: normalizedCode,
             name: student.name,
             seat: student.seat,
-            timestamp
+            timestamp,
+            date: sheetName
         });
 
-        console.log(`Asistencia registrada: ${student.name} (${normalizedCode}) -> ${student.seat} a las ${timestamp}`);
+        console.log(`Asistencia registrada (${sheetName}): ${student.name} (${normalizedCode}) -> ${student.seat} a las ${timestamp}`);
         res.json({ success: true, timestamp });
     } catch (error) {
         console.error('Error registrando asistencia:', error);
+
+        if (error.message && error.message.includes('Unable to parse range')) {
+            return res.status(404).json({
+                success: false,
+                error: 'No hay ceremonia de graduación programada para hoy'
+            });
+        }
+
         res.status(500).json({ success: false, error: 'Error interno del servidor' });
     }
 });
 
-// API: Obtener registros de asistencia desde Google Sheets (para el visor)
+// API: Obtener registros de asistencia (con fecha opcional, default: hoy)
 app.get('/api/attendance', async (req, res) => {
     try {
-        const attendees = await fetchAttendanceFromSheet();
+        const sheetName = req.query.date || getTodaySheetName();
+
+        if (!isValidSheetDate(sheetName)) {
+            return res.status(400).json({ error: 'Formato de fecha inválido. Use dd-mm-yyyy.' });
+        }
+
+        const attendees = await fetchAttendanceFromSheet(sheetName);
         res.json({
             count: attendees.length,
-            students: attendees
+            students: attendees,
+            date: sheetName
         });
     } catch (error) {
         console.error('Error al obtener asistencia desde Google Sheets:', error);
+
+        if (error.message && error.message.includes('Unable to parse range')) {
+            return res.status(404).json({
+                count: 0,
+                students: [],
+                error: 'No se encontró hoja para la fecha indicada'
+            });
+        }
+
         res.status(500).json({ count: 0, students: [], error: 'Error al leer asistencia' });
     }
 });
 
-// SSE: Endpoint para eventos en tiempo real (visor)
+// SSE: Endpoint para eventos en tiempo real (filtrado por fecha)
 app.get('/api/attendance/events', (req, res) => {
+    const date = req.query.date || getTodaySheetName();
+
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive'
     });
 
-    // Enviar comentario inicial para establecer conexión
     res.write(':connected\n\n');
 
-    sseClients.push(res);
-    console.log(`Visor SSE conectado. Total clientes: ${sseClients.length}`);
+    sseClients.push({ res, date });
+    console.log(`Visor SSE conectado (${date}). Total clientes: ${sseClients.length}`);
 
     req.on('close', () => {
-        const index = sseClients.indexOf(res);
+        const index = sseClients.findIndex(c => c.res === res);
         if (index !== -1) {
             sseClients.splice(index, 1);
         }

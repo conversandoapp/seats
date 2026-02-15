@@ -464,6 +464,54 @@
                 font-size: 0.6em;
             }
         }
+
+        /* Selector de fechas */
+        .date-selector-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 18px 25px;
+            background: #ffffff;
+            border: 2px solid #ff6b54;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .date-label {
+            font-size: 1.05em;
+            color: #2c3e50;
+            font-weight: 600;
+            font-family: 'Arial', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .date-select {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            border: 2px solid #ff6b54;
+            border-radius: 4px;
+            background: #fafafa;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            min-width: 180px;
+            text-align: center;
+        }
+
+        .date-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 107, 84, 0.2);
+            background: #ffffff;
+        }
+
+        .date-status {
+            font-size: 0.9em;
+            font-family: 'Arial', sans-serif;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -472,6 +520,15 @@
             <div class="university-logo">VISOR EN TIEMPO REAL - GRADUACIÓN 2025</div>
             <h1>Panel de Control</h1>
             <p class="subtitle">Seguimiento de asistentes logueados</p>
+        </div>
+
+        <!-- Selector de Fecha -->
+        <div class="date-selector-panel" id="dateSelectorPanel">
+            <label class="date-label">Fecha de ceremonia:</label>
+            <select id="dateSelect" class="date-select" onchange="onDateChanged()">
+                <option value="">Cargando fechas...</option>
+            </select>
+            <span id="dateStatus" class="date-status"></span>
         </div>
 
         <div class="stats-panel">
@@ -577,6 +634,107 @@
         let loggedUsers = [];
         // Mapa para acceso rápido: seat id -> user data
         let occupiedSeats = {};
+        // Fecha actualmente seleccionada y referencia SSE
+        let currentDate = '';
+        let eventSource = null;
+
+        // Obtener la fecha de hoy en formato dd-mm-yyyy (zona horaria Perú)
+        function getTodayDate() {
+            const formatter = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'America/Lima',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            return formatter.format(new Date()).replace(/\//g, '-');
+        }
+
+        // Parsear dd-mm-yyyy a Date para ordenar
+        function parseDateStr(dateStr) {
+            const [dd, mm, yyyy] = dateStr.split('-').map(Number);
+            return new Date(yyyy, mm - 1, dd);
+        }
+
+        // Cargar fechas disponibles desde el spreadsheet
+        async function loadAvailableDates() {
+            const select = document.getElementById('dateSelect');
+            const statusEl = document.getElementById('dateStatus');
+
+            try {
+                const response = await fetch('/api/sheets');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                const dates = data.sheets || [];
+
+                // Ordenar cronológicamente (más reciente primero)
+                dates.sort((a, b) => parseDateStr(b) - parseDateStr(a));
+
+                select.innerHTML = '';
+
+                if (dates.length === 0) {
+                    select.innerHTML = '<option value="">No hay ceremonias disponibles</option>';
+                    return;
+                }
+
+                const today = getTodayDate();
+                let todayFound = false;
+
+                dates.forEach(dateStr => {
+                    const option = document.createElement('option');
+                    option.value = dateStr;
+
+                    if (dateStr === today) {
+                        option.textContent = `${dateStr} (Hoy)`;
+                        todayFound = true;
+                    } else {
+                        option.textContent = dateStr;
+                    }
+
+                    select.appendChild(option);
+                });
+
+                // Default: hoy si existe, sino la fecha más reciente
+                if (todayFound) {
+                    select.value = today;
+                    currentDate = today;
+                    statusEl.textContent = 'Mostrando ceremonia de hoy';
+                    statusEl.style.color = '#5cb85c';
+                } else {
+                    select.value = dates[0];
+                    currentDate = dates[0];
+                    statusEl.textContent = 'No hay ceremonia hoy. Mostrando fecha más reciente.';
+                    statusEl.style.color = '#f0ad4e';
+                }
+
+                // Cargar datos de la fecha seleccionada
+                loadLoggedUsers();
+                reconnectSSE();
+
+            } catch (error) {
+                console.error('Error cargando fechas disponibles:', error);
+                select.innerHTML = '<option value="">Error al cargar fechas</option>';
+            }
+        }
+
+        // Cambio de fecha en el selector
+        function onDateChanged() {
+            const select = document.getElementById('dateSelect');
+            const statusEl = document.getElementById('dateStatus');
+            currentDate = select.value;
+
+            const today = getTodayDate();
+            if (currentDate === today) {
+                statusEl.textContent = 'Mostrando ceremonia de hoy';
+                statusEl.style.color = '#5cb85c';
+            } else {
+                statusEl.textContent = `Mostrando datos de ${currentDate}`;
+                statusEl.style.color = '#666';
+            }
+
+            // Recargar todo para la nueva fecha
+            loadLoggedUsers();
+            reconnectSSE();
+        }
 
         // Crear los grids de los 4 bloques al cargar
         function createAllBlockGrids() {
@@ -659,10 +817,17 @@
             tooltip.style.display = 'none';
         }
 
-        // Cargar registros de asistencia desde el servidor
+        // Cargar registros de asistencia desde el servidor (para la fecha seleccionada)
         async function loadLoggedUsers() {
             try {
-                const response = await fetch('/api/attendance');
+                const response = await fetch(`/api/attendance?date=${currentDate}`);
+                if (response.status === 404) {
+                    loggedUsers = [];
+                    updateDisplay();
+                    console.warn(`No se encontró hoja para la fecha ${currentDate}`);
+                    updateLastUpdateTime();
+                    return;
+                }
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 loggedUsers = data.students || [];
@@ -768,10 +933,19 @@
             }
         }
 
+        // Reconectar SSE (al cambiar de fecha)
+        function reconnectSSE() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            connectSSE();
+        }
+
         // Conexión SSE para recibir eventos de asistencia en tiempo real
         let sseUpdateTimeout = null;
         function connectSSE() {
-            const eventSource = new EventSource('/api/attendance/events');
+            eventSource = new EventSource(`/api/attendance/events?date=${currentDate}`);
 
             eventSource.addEventListener('attendance-update', (event) => {
                 console.log('SSE: Nuevo registro de asistencia recibido', JSON.parse(event.data));
@@ -784,16 +958,15 @@
 
             eventSource.onerror = () => {
                 console.warn('SSE: Conexión perdida, reconectando...');
-                eventSource.close();
+                if (eventSource) eventSource.close();
                 setTimeout(connectSSE, 5000);
             };
         }
 
         // Inicializar
         createAllBlockGrids();
-        loadLoggedUsers();
+        loadAvailableDates(); // Carga fechas, selecciona la de hoy, y llama loadLoggedUsers() + connectSSE()
         toggleAutoRefresh();
-        connectSSE();
     </script>
 </body>
 </html>

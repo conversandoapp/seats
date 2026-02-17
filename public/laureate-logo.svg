@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <path id="textCircleTop" d="M 100,100 m -88,0 a 88,88 0 1,1 176,0"/>
+    <path id="textCircleBottom" d="M 100,100 m 88,0 a 88,88 0 1,1 -176,0"/>
+  </defs>
+
+  <!-- Starburst -->
+  <polygon points="100.0,25.0 104.2,68.3 119.4,27.6 112.2,70.4 137.5,35.0 119.5,74.6 153.0,47.0 125.4,80.5 165.0,62.5 129.6,87.8 172.4,80.6 131.7,95.8 175.0,100.0 131.7,104.2 172.4,119.4 129.6,112.2 165.0,137.5 125.4,119.5 153.0,153.0 119.5,125.4 137.5,165.0 112.2,129.6 119.4,172.4 104.2,131.7 100.0,175.0 95.8,131.7 80.6,172.4 87.8,129.6 62.5,165.0 80.5,125.4 47.0,153.0 74.6,119.5 35.0,137.5 70.4,112.2 27.6,119.4 68.3,104.2 25.0,100.0 68.3,95.8 27.6,80.6 70.4,87.8 35.0,62.5 74.6,80.5 47.0,47.0 80.5,74.6 62.5,35.0 87.8,70.4 80.6,27.6 95.8,68.3" fill="#c41e3a"/>
+
+  <!-- Center circle -->
+  <circle cx="100" cy="100" r="28" fill="#c41e3a"/>
+
+  <!-- Outer ring -->
+  <circle cx="100" cy="100" r="92" fill="none" stroke="#c41e3a" stroke-width="2.5"/>
+  <circle cx="100" cy="100" r="85" fill="none" stroke="#c41e3a" stroke-width="0.8"/>
+
+  <!-- Text: LAUREATE on top -->
+  <text fill="#c41e3a" font-size="11.5" font-family="Georgia, serif" font-weight="600" letter-spacing="4.5">
+    <textPath href="#textCircleTop" startOffset="22%">LAUREATE</textPath>
+  </text>
+
+  <!-- Text: INTERNATIONAL UNIVERSITIES on bottom -->
+  <text fill="#c41e3a" font-size="8.2" font-family="Georgia, serif" font-weight="600" letter-spacing="2.2">
+    <textPath href="#textCircleBottom" startOffset="9%">INTERNATIONAL UNIVERSITIES</textPath>
+  </text>
+</svg>

@@ -135,7 +135,6 @@
 
         /* ===== Venue Layout: 4 bloques + estrado ===== */
         .venue-layout {
-            overflow-x: auto;
             margin-bottom: 30px;
             padding: 10px 0;
         }
@@ -155,8 +154,7 @@
             display: flex;
             align-items: stretch;
             justify-content: center;
-            gap: 12px;
-            min-width: fit-content;
+            gap: 6px;
             padding: 10px;
         }
 
@@ -164,8 +162,9 @@
             background: #ffffff;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
-            padding: 12px 10px;
-            flex-shrink: 0;
+            padding: 8px 6px;
+            flex: 1;
+            min-width: 0;
             transition: border-color 0.3s;
         }
 
@@ -176,16 +175,16 @@
         .block-header {
             text-align: center;
             font-family: 'Georgia', serif;
-            font-size: 1em;
+            font-size: 0.9em;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
             border-bottom: 2px solid #ff6b54;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .block-stats {
@@ -204,30 +203,30 @@
         .block-grid {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 2px;
         }
 
         .block-row {
             display: flex;
-            gap: 2px;
+            gap: 1px;
             align-items: center;
         }
 
         .row-label {
-            font-size: 0.7em;
+            font-size: 0.65em;
             color: #999;
-            width: 16px;
+            width: 14px;
             text-align: right;
-            margin-right: 4px;
+            margin-right: 2px;
             font-family: 'Arial', sans-serif;
             flex-shrink: 0;
             font-weight: 600;
         }
 
-        /* Seats: 16px para que quepan 4 bloques horizontalmente */
+        /* Seats: tamaño flexible para caber en una sola vista */
         .seat {
-            width: 16px;
-            height: 16px;
+            width: 12px;
+            height: 12px;
             background: #f5f5f5;
             border: 1.5px solid #8b7355;
             border-radius: 3px 3px 1px 1px;
@@ -279,11 +278,11 @@
             color: #ffffff;
             writing-mode: vertical-lr;
             text-orientation: mixed;
-            padding: 20px 14px;
+            padding: 15px 8px;
             border-radius: 6px;
             font-weight: 600;
-            font-size: 16px;
-            letter-spacing: 4px;
+            font-size: 13px;
+            letter-spacing: 3px;
             text-transform: uppercase;
             font-family: 'Arial', sans-serif;
             border: 2px solid #ff6b54;
@@ -435,33 +434,34 @@
         }
 
         /* Responsive */
-        @media (max-width: 1400px) {
-            .seat {
-                width: 14px;
-                height: 14px;
-            }
-            .block-panel {
-                padding: 10px 8px;
-            }
-            .blocks-row {
-                gap: 8px;
-            }
-        }
-
         @media (max-width: 1100px) {
             .seat {
-                width: 12px;
-                height: 12px;
+                width: 10px;
+                height: 10px;
             }
             .block-panel {
-                padding: 8px 6px;
+                padding: 6px 4px;
             }
             .block-header {
-                font-size: 0.9em;
+                font-size: 0.85em;
+                gap: 6px;
+            }
+            .block-stats {
+                font-size: 0.7em;
+                min-width: 55px;
+                padding: 2px 6px;
             }
             .row-label {
-                width: 14px;
-                font-size: 0.6em;
+                width: 12px;
+                font-size: 0.55em;
+            }
+            .blocks-row {
+                gap: 4px;
+            }
+            .stage-center {
+                padding: 10px 6px;
+                font-size: 11px;
+                letter-spacing: 2px;
             }
         }
 

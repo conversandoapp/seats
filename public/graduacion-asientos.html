@@ -63,9 +63,13 @@
         }
 
         .graduation-icon {
-            font-size: 100px;
             margin-bottom: 30px;
-            filter: drop-shadow(0 4px 6px rgba(255, 107, 84, 0.3));
+            filter: drop-shadow(0 4px 6px rgba(196, 30, 58, 0.3));
+        }
+
+        .graduation-icon img {
+            width: 150px;
+            height: 150px;
         }
 
         .university-logo {
@@ -992,7 +996,7 @@
         <!-- Pantalla de Bienvenida -->
         <div class="welcome-screen" id="welcomeScreen">
             <div class="university-logo">CEREMONIA DE GRADUACIÓN 2025</div>
-            <div class="graduation-icon">🎓</div>
+            <div class="graduation-icon"><img src="/laureate-logo.svg" alt="Laureate International Universities"></div>
             <h1>Bienvenido a tu Graduación</h1>
             <div id="todayDateDisplay" style="font-size: 0.95em; color: #666; margin-bottom: 10px; font-family: Arial, sans-serif;"></div>
             <p class="subtitle">Por favor indícanos tu código de alumno para ubicarte</p>
@@ -1017,6 +1021,7 @@
 
             <div class="student-info" id="studentInfo">
                 <h2>¡Felicidades, <span id="studentName"></span>!</h2>
+                <p id="studentCarrera" style="font-size: 1.05em; color: #555; margin-bottom: 12px; font-family: Georgia, serif; font-style: italic;"></p>
                 <p style="font-size: 1.1em; margin-bottom: 10px;">Tu asiento asignado es:</p>
                 <div class="seat-assignment" id="seatAssignment"></div>
                 <div class="row-info" id="rowInfo"></div>
@@ -1219,8 +1224,12 @@
             // Mostrar pantalla de asiento con estado de carga
             document.getElementById('seatingScreen').classList.add('active');
 
+            // Scroll al inicio para que se vean primero los datos del alumno
+            window.scrollTo(0, 0);
+
             // Mostrar información del estudiante con indicador de registro
             document.getElementById('studentName').textContent = studentData.name;
+            document.getElementById('studentCarrera').textContent = studentData.carrera || '';
             document.getElementById('seatAssignment').textContent = studentData.seat;
             document.getElementById('rowInfo').textContent = `Fila ${studentData.row} del Bloque ${studentData.block}`;
             document.getElementById('studentCodeDisplay').textContent = `Código: ${studentCode.toUpperCase()}`;

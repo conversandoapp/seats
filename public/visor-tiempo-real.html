@@ -637,6 +637,9 @@
         // Fecha actualmente seleccionada y referencia SSE
         let currentDate = '';
         let eventSource = null;
+        // Asientos válidos del Google Sheet para la fecha seleccionada
+        let validSeats = new Set();
+        let blockValidCounts = { A: 0, B: 0, C: 0, D: 0 };
 
         // Obtener la fecha de hoy en formato dd-mm-yyyy (zona horaria Perú)
         function getTodayDate() {
@@ -708,6 +711,7 @@
 
                 // Cargar datos de la fecha seleccionada
                 loadLoggedUsers();
+                loadValidSeats();
                 reconnectSSE();
 
             } catch (error) {
@@ -733,6 +737,7 @@
 
             // Recargar todo para la nueva fecha
             loadLoggedUsers();
+            loadValidSeats();
             reconnectSSE();
         }
 
@@ -817,6 +822,44 @@
             tooltip.style.display = 'none';
         }
 
+        // Cargar asientos válidos del Google Sheet para la fecha seleccionada
+        async function loadValidSeats() {
+            try {
+                const response = await fetch(`/api/students?date=${currentDate}`);
+                validSeats = new Set();
+                blockValidCounts = { A: 0, B: 0, C: 0, D: 0 };
+
+                if (response.ok) {
+                    const data = await response.json();
+                    Object.values(data).forEach(student => {
+                        validSeats.add(student.seat);
+                        if (blockValidCounts.hasOwnProperty(student.block)) {
+                            blockValidCounts[student.block]++;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando asientos válidos:', error);
+            }
+
+            updateSeatVisibility();
+            document.getElementById('totalSeats').textContent = validSeats.size || TOTAL_SEATS;
+        }
+
+        // Mostrar/ocultar asientos según si existen en el Google Sheet
+        function updateSeatVisibility() {
+            document.querySelectorAll('.seat[data-seat]').forEach(seatEl => {
+                const seatId = seatEl.dataset.seat;
+                if (validSeats.size > 0 && !validSeats.has(seatId)) {
+                    seatEl.style.visibility = 'hidden';
+                    seatEl.style.pointerEvents = 'none';
+                } else {
+                    seatEl.style.visibility = 'visible';
+                    seatEl.style.pointerEvents = '';
+                }
+            });
+        }
+
         // Cargar registros de asistencia desde el servidor (para la fecha seleccionada)
         async function loadLoggedUsers() {
             try {
@@ -865,17 +908,20 @@
                 }
             });
 
-            // Actualizar stats por bloque
+            // Actualizar stats por bloque (usar conteo real del sheet si está disponible)
             BLOCKS.forEach(b => {
                 const statsEl = document.getElementById(`stats${b}`);
                 if (statsEl) {
-                    statsEl.textContent = `${blockCounts[b]}/${SEATS_PER_BLOCK}`;
+                    const blockTotal = blockValidCounts[b] > 0 ? blockValidCounts[b] : SEATS_PER_BLOCK;
+                    statsEl.textContent = `${blockCounts[b]}/${blockTotal}`;
                 }
             });
 
             // Actualizar estadísticas globales
+            const totalSeats = validSeats.size > 0 ? validSeats.size : TOTAL_SEATS;
             document.getElementById('totalLoggedIn').textContent = loggedUsers.length;
-            const percentage = ((loggedUsers.length / TOTAL_SEATS) * 100).toFixed(1);
+            document.getElementById('totalSeats').textContent = totalSeats;
+            const percentage = ((loggedUsers.length / totalSeats) * 100).toFixed(1);
             document.getElementById('percentageOccupied').textContent = percentage + '%';
 
             // Actualizar lista de usuarios

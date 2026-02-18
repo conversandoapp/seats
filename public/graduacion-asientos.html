@@ -994,7 +994,7 @@
     <div class="container">
         <!-- Pantalla de Bienvenida -->
         <div class="welcome-screen" id="welcomeScreen">
-            <div class="university-logo">CEREMONIA DE GRADUACIÓN 2025</div>
+            <div class="university-logo" id="ceremonyTitle">CEREMONIA DE GRADUACIÓN 2025</div>
             <div class="graduation-icon"><img src="/laureate-logo.png" alt="Laureate"></div>
             <h1>Bienvenido a tu Graduación</h1>
             <div id="todayDateDisplay" style="font-size: 0.95em; color: #666; margin-bottom: 10px; font-family: Arial, sans-serif;"></div>
@@ -1152,6 +1152,8 @@
         const BLOCKS = ['A', 'B', 'C', 'D'];
 
         let currentStudentData = null;
+        // Conjunto de IDs de asientos que existen en el Google Sheet para la fecha actual
+        let validSeats = new Set();
 
         // Obtener la fecha de hoy en formato dd-mm-yyyy (zona horaria Perú)
         function getTodayDate() {
@@ -1164,12 +1166,21 @@
             return formatter.format(new Date()).replace(/\//g, '-');
         }
 
-        // Mostrar fecha de hoy al cargar la página
+        // Mostrar fecha de hoy y año correcto al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
             const dateDisplay = document.getElementById('todayDateDisplay');
             if (dateDisplay) {
                 const today = getTodayDate();
                 dateDisplay.textContent = `Fecha de ceremonia: ${today}`;
+            }
+            // Actualizar año de la ceremonia según la fecha actual (zona horaria Perú)
+            const titleEl = document.getElementById('ceremonyTitle');
+            if (titleEl) {
+                const year = new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'America/Lima',
+                    year: 'numeric'
+                }).format(new Date());
+                titleEl.textContent = `CEREMONIA DE GRADUACIÓN ${year}`;
             }
         });
 
@@ -1245,11 +1256,13 @@
             statusEl.textContent = 'Registrando asistencia...';
 
             // Registrar asistencia en el servidor (con reintentos en backend)
+            // Se envía la fecha para asegurar que se registre en la hoja correcta
             try {
+                const attendanceDate = getTodayDate();
                 const response = await fetch('/api/attendance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: studentCode })
+                    body: JSON.stringify({ code: studentCode, date: attendanceDate })
                 });
 
                 const result = await response.json();
@@ -1266,6 +1279,17 @@
                 console.error('Error registrando asistencia:', error);
                 statusEl.style.color = '#d9534f';
                 statusEl.innerHTML = 'Error de conexión al registrar asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';
+            }
+
+            // Cargar asientos válidos del Google Sheet para esta fecha
+            try {
+                const allStudentsResp = await fetch(`/api/students?date=${attendanceDate}`);
+                if (allStudentsResp.ok) {
+                    const allStudentsData = await allStudentsResp.json();
+                    validSeats = new Set(Object.values(allStudentsData).map(s => s.seat));
+                }
+            } catch (e) {
+                console.warn('No se pudieron cargar los asientos válidos:', e);
             }
 
             // Crear vista del recinto
@@ -1372,9 +1396,15 @@
         // Crear un asiento individual
         function createSeat(block, seatNumber, row) {
             const seat = document.createElement('div');
+            const seatId = `${block}-${seatNumber}`;
             seat.className = 'seat';
-            seat.dataset.seat = `${block}-${seatNumber}`;
+            seat.dataset.seat = seatId;
             seat.title = `${block}-${seatNumber} (Fila ${row})`;
+            // Si hay datos del sheet y este asiento no existe, ocultarlo visualmente
+            if (validSeats.size > 0 && !validSeats.has(seatId)) {
+                seat.style.visibility = 'hidden';
+                seat.style.pointerEvents = 'none';
+            }
             return seat;
         }
 
@@ -1386,6 +1416,7 @@
 
         // Volver a pantalla de bienvenida
         function goBack() {
+            validSeats = new Set();
             document.getElementById('studentCode').value = '';
             document.getElementById('errorMessage').innerHTML = '';
             document.getElementById('seatingScreen').classList.remove('active');

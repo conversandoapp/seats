@@ -238,16 +238,16 @@ app.get('/api/students/:code', async (req, res) => {
     }
 });
 
-// API: Registrar asistencia (siempre en la hoja de hoy)
+// API: Registrar asistencia (en la hoja de la fecha en que el alumno buscó su asiento)
 app.post('/api/attendance', async (req, res) => {
     try {
-        const { code } = req.body;
+        const { code, date } = req.body;
         if (!code) {
             return res.status(400).json({ success: false, error: 'Campo requerido: code' });
         }
 
-        // La asistencia siempre se registra en la hoja de hoy
-        const sheetName = getTodaySheetName();
+        // Usar la fecha enviada por el cliente si es válida, sino la de hoy
+        const sheetName = (date && isValidSheetDate(date)) ? date : getTodaySheetName();
 
         const normalizedCode = code.trim().toLowerCase();
         const students = await fetchStudents(sheetName);

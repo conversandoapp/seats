@@ -861,6 +861,35 @@
             border-color: #8b0000;
         }
 
+        /* Tooltip de asientos */
+        .seat-tooltip {
+            display: none;
+            position: fixed;
+            background: #2c3e50;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Arial', sans-serif;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            max-width: 260px;
+            white-space: normal;
+        }
+
+        .seat-tooltip .tooltip-name {
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .seat-tooltip .tooltip-seat {
+            color: #ff6b54;
+            font-size: 11px;
+        }
+
         /* Responsive */
         @media (max-width: 968px) {
             .tribunas-section {
@@ -1146,6 +1175,12 @@
         </div>
     </div>
 
+    <!-- Tooltip flotante para asientos -->
+    <div class="seat-tooltip" id="seatTooltip">
+        <div class="tooltip-name"></div>
+        <div class="tooltip-seat"></div>
+    </div>
+
     <script>
         const ROWS_PER_BLOCK = 7;
         const SEATS_PER_ROW = 21;
@@ -1154,6 +1189,8 @@
         let currentStudentData = null;
         // Conjunto de IDs de asientos que existen en el Google Sheet para la fecha actual
         let validSeats = new Set();
+        // Mapa asiento -> datos del alumno asignado (para tooltips)
+        let seatStudentMap = {};
 
         // Obtener la fecha de hoy en formato dd-mm-yyyy (zona horaria Perú)
         function getTodayDate() {
@@ -1255,10 +1292,12 @@
             statusEl.style.cssText = 'color: #f0ad4e; font-size: 0.95em; margin-top: 8px;';
             statusEl.textContent = 'Registrando asistencia...';
 
+            // Fecha de la ceremonia (calculada una sola vez para usar en ambas llamadas)
+            const attendanceDate = getTodayDate();
+
             // Registrar asistencia en el servidor (con reintentos en backend)
             // Se envía la fecha para asegurar que se registre en la hoja correcta
             try {
-                const attendanceDate = getTodayDate();
                 const response = await fetch('/api/attendance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1281,12 +1320,17 @@
                 statusEl.innerHTML = 'Error de conexión al registrar asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';
             }
 
-            // Cargar asientos válidos del Google Sheet para esta fecha
+            // Cargar todos los alumnos del sheet: asientos válidos + mapa para tooltips
             try {
                 const allStudentsResp = await fetch(`/api/students?date=${attendanceDate}`);
                 if (allStudentsResp.ok) {
                     const allStudentsData = await allStudentsResp.json();
-                    validSeats = new Set(Object.values(allStudentsData).map(s => s.seat));
+                    validSeats = new Set();
+                    seatStudentMap = {};
+                    Object.entries(allStudentsData).forEach(([code, s]) => {
+                        validSeats.add(s.seat);
+                        seatStudentMap[s.seat] = { ...s, code };
+                    });
                 }
             } catch (e) {
                 console.warn('No se pudieron cargar los asientos válidos:', e);
@@ -1399,13 +1443,50 @@
             const seatId = `${block}-${seatNumber}`;
             seat.className = 'seat';
             seat.dataset.seat = seatId;
-            seat.title = `${block}-${seatNumber} (Fila ${row})`;
             // Si hay datos del sheet y este asiento no existe, ocultarlo visualmente
             if (validSeats.size > 0 && !validSeats.has(seatId)) {
                 seat.style.visibility = 'hidden';
                 seat.style.pointerEvents = 'none';
+            } else {
+                seat.addEventListener('mouseenter', showSeatTooltip);
+                seat.addEventListener('mouseleave', hideSeatTooltip);
             }
             return seat;
+        }
+
+        // --- Tooltip de asientos ---
+        const seatTooltipEl = document.getElementById('seatTooltip');
+
+        function showSeatTooltip(e) {
+            const seatId = e.target.dataset.seat;
+            if (!seatId) return;
+            const student = seatStudentMap[seatId];
+            const seatNum = parseInt(seatId.split('-')[1]);
+            const row = Math.ceil(seatNum / SEATS_PER_ROW);
+            if (student) {
+                seatTooltipEl.querySelector('.tooltip-name').textContent = student.name;
+                seatTooltipEl.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
+            } else {
+                seatTooltipEl.querySelector('.tooltip-name').textContent = seatId;
+                seatTooltipEl.querySelector('.tooltip-seat').textContent = `Fila ${row}`;
+            }
+            seatTooltipEl.style.display = 'block';
+            positionSeatTooltip(e);
+        }
+
+        function positionSeatTooltip(e) {
+            seatTooltipEl.style.left = (e.clientX + 15) + 'px';
+            seatTooltipEl.style.top = (e.clientY - 10) + 'px';
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (seatTooltipEl && seatTooltipEl.style.display === 'block') {
+                positionSeatTooltip(e);
+            }
+        });
+
+        function hideSeatTooltip() {
+            seatTooltipEl.style.display = 'none';
         }
 
         // Volver a vista del recinto
@@ -1417,6 +1498,7 @@
         // Volver a pantalla de bienvenida
         function goBack() {
             validSeats = new Set();
+            seatStudentMap = {};
             document.getElementById('studentCode').value = '';
             document.getElementById('errorMessage').innerHTML = '';
             document.getElementById('seatingScreen').classList.remove('active');

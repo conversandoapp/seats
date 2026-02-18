@@ -640,6 +640,8 @@
         // Asientos válidos del Google Sheet para la fecha seleccionada
         let validSeats = new Set();
         let blockValidCounts = { A: 0, B: 0, C: 0, D: 0 };
+        // Mapa asiento -> alumno asignado según el sheet (para tooltips en asientos no ocupados)
+        let allStudentsMap = {};
 
         // Obtener la fecha de hoy en formato dd-mm-yyyy (zona horaria Perú)
         function getTodayDate() {
@@ -791,12 +793,19 @@
             const seatNum = parseInt(seatId.split('-')[1]);
             const row = Math.ceil(seatNum / SEATS_PER_ROW);
 
+            const assignedStudent = allStudentsMap[seatId];
             if (user) {
+                // Alumno que ya ingresó
                 tooltip.querySelector('.tooltip-name').textContent = user.name;
                 tooltip.querySelector('.tooltip-code').textContent = user.code.toUpperCase();
                 tooltip.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
+            } else if (assignedStudent) {
+                // Alumno asignado pero aún no ingresó
+                tooltip.querySelector('.tooltip-name').textContent = assignedStudent.name;
+                tooltip.querySelector('.tooltip-code').textContent = `${assignedStudent.code.toUpperCase()} · Sin ingresar`;
+                tooltip.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
             } else {
-                tooltip.querySelector('.tooltip-name').textContent = 'Disponible';
+                tooltip.querySelector('.tooltip-name').textContent = 'Sin asignar';
                 tooltip.querySelector('.tooltip-code').textContent = '';
                 tooltip.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
             }
@@ -828,11 +837,13 @@
                 const response = await fetch(`/api/students?date=${currentDate}`);
                 validSeats = new Set();
                 blockValidCounts = { A: 0, B: 0, C: 0, D: 0 };
+                allStudentsMap = {};
 
                 if (response.ok) {
                     const data = await response.json();
-                    Object.values(data).forEach(student => {
+                    Object.entries(data).forEach(([code, student]) => {
                         validSeats.add(student.seat);
+                        allStudentsMap[student.seat] = { ...student, code };
                         if (blockValidCounts.hasOwnProperty(student.block)) {
                             blockValidCounts[student.block]++;
                         }

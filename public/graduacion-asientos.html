@@ -204,9 +204,9 @@
         }
 
         .student-info .seat-assignment {
-            font-size: 4em;
+            font-size: 3em;
             font-weight: bold;
-            margin: 25px 0;
+            margin: 20px 0;
             text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
             color: #ffffff;
             font-family: 'Georgia', serif;
@@ -217,6 +217,12 @@
             font-size: 1.5em;
             margin: 15px 0;
             font-weight: 500;
+        }
+
+        .student-info #blockInfo {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 5px;
         }
 
         .student-info p {
@@ -550,6 +556,14 @@
             font-weight: bold;
             color: #c41e3a;
             font-family: 'Georgia', serif;
+        }
+
+        .block-row-label {
+            font-size: 0.75em;
+            font-weight: 500;
+            color: #666;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
         }
         
         @media (max-width: 768px) {
@@ -921,7 +935,7 @@
             }
 
             .student-info .seat-assignment {
-                font-size: 3em;
+                font-size: 2.5em;
             }
 
             .seat {
@@ -1010,11 +1024,15 @@
             }
             
             .student-info .seat-assignment {
-                font-size: 2.5em;
+                font-size: 2.2em;
             }
-            
+
             .student-info .row-info {
                 font-size: 1.2em;
+            }
+
+            .student-info #blockInfo {
+                font-size: 1.6em;
             }
         }
     </style>
@@ -1367,7 +1385,7 @@
                 
                 if (currentStudentData.block === blockLetter) {
                     blockElement.classList.add('user-block');
-                    infoElement.innerHTML = `<div class="block-seat-info">${currentStudentData.seat}</div>`;
+                    infoElement.innerHTML = `<div class="block-seat-info"><div class="block-row-label">Fila ${currentStudentData.row}</div>${currentStudentData.seat}</div>`;
                 }
             });
         }

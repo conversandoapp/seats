@@ -1051,8 +1051,9 @@
                 <h2>¡Felicidades, <span id="studentName"></span>!</h2>
                 <p id="studentCarrera" style="font-size: 1.05em; color: #555; margin-bottom: 12px; font-family: Georgia, serif; font-style: italic;"></p>
                 <p style="font-size: 1.1em; margin-bottom: 10px;">Tu asiento asignado es:</p>
-                <div class="seat-assignment" id="seatAssignment"></div>
+                <div class="row-info" id="blockInfo"></div>
                 <div class="row-info" id="rowInfo"></div>
+                <div class="seat-assignment" id="seatAssignment"></div>
                 <p id="studentCodeDisplay"></p>
             </div>
 
@@ -1277,8 +1278,9 @@
             // Mostrar información del estudiante con indicador de registro
             document.getElementById('studentName').textContent = studentData.name;
             document.getElementById('studentCarrera').textContent = studentData.carrera || '';
+            document.getElementById('blockInfo').textContent = `Bloque ${studentData.block}`;
+            document.getElementById('rowInfo').textContent = `Fila ${studentData.row}`;
             document.getElementById('seatAssignment').textContent = studentData.seat;
-            document.getElementById('rowInfo').textContent = `Fila ${studentData.row} del Bloque ${studentData.block}`;
             document.getElementById('studentCodeDisplay').textContent = `Código: ${studentCode.toUpperCase()}`;
 
             // Mostrar indicador de registro de asistencia
@@ -1465,10 +1467,10 @@
             const row = Math.ceil(seatNum / SEATS_PER_ROW);
             if (student) {
                 seatTooltipEl.querySelector('.tooltip-name').textContent = student.name;
-                seatTooltipEl.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
+                seatTooltipEl.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId}`;
             } else {
                 seatTooltipEl.querySelector('.tooltip-name').textContent = seatId;
-                seatTooltipEl.querySelector('.tooltip-seat').textContent = `Fila ${row}`;
+                seatTooltipEl.querySelector('.tooltip-seat').textContent = '';
             }
             seatTooltipEl.style.display = 'block';
             positionSeatTooltip(e);

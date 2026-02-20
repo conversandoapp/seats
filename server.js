@@ -11,24 +11,27 @@ const PORT = process.env.PORT || 3000;
 // Configuración de Google Sheets
 const SPREADSHEET_ID = '1MDNAmS98qoUlIJmrX2t2LyHV028J9iG7zoWNyRPJqCw';
 
-// Obtener la fecha de hoy como nombre de hoja (dd-mm-yyyy) en zona horaria de Perú
-function getTodaySheetName() {
-    const formatter = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'America/Lima',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-    return formatter.format(new Date()).replace(/\//g, '-');
+// Validar que un nombre de hoja tenga formato dd-mm-yyyy-G-E
+// G = letra de graduación (A, B, C, ...), E = estado (A=Activo, D=Desactivo)
+function isValidSheet(sheetName) {
+    return /^\d{2}-\d{2}-\d{4}-[A-Z]-[AD]$/.test(sheetName);
 }
 
-// Validar que un nombre de hoja tenga formato dd-mm-yyyy
-function isValidSheetDate(sheetName) {
-    return /^\d{2}-\d{2}-\d{4}$/.test(sheetName);
+// Extraer información estructurada del nombre de hoja
+function parseSheetInfo(sheetName) {
+    const m = sheetName.match(/^(\d{2}-\d{2}-\d{4})-([A-Z])-([AD])$/);
+    if (!m) return null;
+    return {
+        name: sheetName,
+        date: m[1],
+        graduation: m[2],
+        state: m[3],
+        active: m[3] === 'A'
+    };
 }
 
 // Clientes SSE conectados (para notificar al visor en tiempo real)
-// Cada elemento: { res, date }
+// Cada elemento: { res, sheet }
 const sseClients = [];
 
 // Cliente de Google Sheets API
@@ -147,12 +150,12 @@ async function writeAttendanceToSheet(sheetName, sheetRow, timestamp) {
     return false; // Todos los intentos fallaron
 }
 
-// Notificar a clientes SSE (solo a los que estén viendo la misma fecha)
+// Notificar a clientes SSE (solo a los que estén viendo la misma hoja)
 function notifySSEClients(eventData) {
     const data = JSON.stringify(eventData);
     for (let i = sseClients.length - 1; i >= 0; i--) {
         try {
-            if (sseClients[i].date === eventData.date) {
+            if (sseClients[i].sheet === eventData.sheet) {
                 sseClients[i].res.write(`event: attendance-update\ndata: ${data}\n\n`);
             }
         } catch (err) {
@@ -161,7 +164,7 @@ function notifySSEClients(eventData) {
     }
 }
 
-// API: Listar todas las hojas con formato de fecha del spreadsheet
+// API: Listar todas las hojas de graduación del spreadsheet
 app.get('/api/sheets', async (req, res) => {
     try {
         const sheets = getSheetsClient();
@@ -170,23 +173,76 @@ app.get('/api/sheets', async (req, res) => {
             fields: 'sheets.properties.title'
         });
 
-        const sheetNames = response.data.sheets.map(s => s.properties.title);
-        const dateSheets = sheetNames.filter(name => isValidSheetDate(name));
+        const allNames = response.data.sheets.map(s => s.properties.title);
+        const result = allNames.filter(isValidSheet).map(parseSheetInfo);
 
-        res.json({ sheets: dateSheets });
+        res.json({ sheets: result });
     } catch (error) {
         console.error('Error al obtener lista de hojas:', error);
         res.status(500).json({ error: 'Error al obtener lista de hojas' });
     }
 });
 
-// API: Obtener todos los alumnos (con fecha opcional, default: hoy)
+// API: Cambiar estado de una hoja (renombrar para activar/desactivar)
+app.post('/api/sheets/set-state', async (req, res) => {
+    try {
+        const { sheetName, state } = req.body;
+
+        if (!sheetName || !isValidSheet(sheetName) || !['A', 'D'].includes(state)) {
+            return res.status(400).json({ error: 'Parámetros inválidos. Se requiere sheetName (dd-mm-yyyy-G-E) y state (A|D).' });
+        }
+
+        const info = parseSheetInfo(sheetName);
+        const newName = `${info.date}-${info.graduation}-${state}`;
+
+        if (newName === sheetName) {
+            return res.json({ success: true, newName }); // Sin cambio necesario
+        }
+
+        const sheetsClient = getSheetsClient();
+
+        // Obtener ID numérico de la hoja
+        const meta = await sheetsClient.spreadsheets.get({
+            spreadsheetId: SPREADSHEET_ID,
+            fields: 'sheets.properties'
+        });
+
+        const sheet = meta.data.sheets.find(s => s.properties.title === sheetName);
+        if (!sheet) {
+            return res.status(404).json({ error: 'Hoja no encontrada en el spreadsheet' });
+        }
+
+        // Renombrar la hoja
+        await sheetsClient.spreadsheets.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            requestBody: {
+                requests: [{
+                    updateSheetProperties: {
+                        properties: {
+                            sheetId: sheet.properties.sheetId,
+                            title: newName
+                        },
+                        fields: 'title'
+                    }
+                }]
+            }
+        });
+
+        console.log(`Hoja renombrada: ${sheetName} → ${newName}`);
+        res.json({ success: true, newName });
+    } catch (error) {
+        console.error('Error al cambiar estado de hoja:', error);
+        res.status(500).json({ error: 'Error al cambiar estado de la hoja' });
+    }
+});
+
+// API: Obtener todos los alumnos de una hoja específica (parámetro: sheet=dd-mm-yyyy-G-E)
 app.get('/api/students', async (req, res) => {
     try {
-        const sheetName = req.query.date || getTodaySheetName();
+        const sheetName = req.query.sheet;
 
-        if (!isValidSheetDate(sheetName)) {
-            return res.status(400).json({ error: 'Formato de fecha inválido. Use dd-mm-yyyy.' });
+        if (!sheetName || !isValidSheet(sheetName)) {
+            return res.status(400).json({ error: 'Parámetro sheet inválido. Use formato dd-mm-yyyy-G-E.' });
         }
 
         const students = await fetchStudents(sheetName);
@@ -196,9 +252,9 @@ app.get('/api/students', async (req, res) => {
 
         if (error.message && error.message.includes('Unable to parse range')) {
             return res.status(404).json({
-                error: 'No se encontró hoja para la fecha indicada',
+                error: 'No se encontró hoja para el parámetro indicado',
                 noSheet: true,
-                sheetName: req.query.date || getTodaySheetName()
+                sheetName: req.query.sheet
             });
         }
 
@@ -206,51 +262,64 @@ app.get('/api/students', async (req, res) => {
     }
 });
 
-// API: Buscar un alumno por código (con fecha opcional, default: hoy)
+// API: Buscar un alumno por código (busca en TODAS las hojas activas)
 app.get('/api/students/:code', async (req, res) => {
     try {
         const code = req.params.code.trim().toLowerCase();
-        const sheetName = req.query.date || getTodaySheetName();
 
-        if (!isValidSheetDate(sheetName)) {
-            return res.status(400).json({ error: 'Formato de fecha inválido. Use dd-mm-yyyy.' });
-        }
+        // Obtener todas las hojas del spreadsheet
+        const sheetsClient = getSheetsClient();
+        const meta = await sheetsClient.spreadsheets.get({
+            spreadsheetId: SPREADSHEET_ID,
+            fields: 'sheets.properties.title'
+        });
 
-        const students = await fetchStudents(sheetName);
-        const student = students[code];
+        const activeSheets = meta.data.sheets
+            .map(s => s.properties.title)
+            .filter(isValidSheet)
+            .map(parseSheetInfo)
+            .filter(s => s.active);
 
-        if (!student) {
-            return res.status(404).json({ error: 'Código de alumno no encontrado' });
-        }
-
-        res.json(student);
-    } catch (error) {
-        console.error('Error al buscar alumno:', error);
-
-        if (error.message && error.message.includes('Unable to parse range')) {
+        if (activeSheets.length === 0) {
             return res.status(404).json({
-                error: 'No hay ceremonia de graduación programada para hoy',
+                error: 'No hay ceremonias de graduación activas',
                 noSheet: true
             });
         }
 
+        // Buscar el alumno en cada hoja activa
+        for (const sheet of activeSheets) {
+            try {
+                const students = await fetchStudents(sheet.name);
+                if (students[code]) {
+                    return res.json({ ...students[code], sheetName: sheet.name });
+                }
+            } catch (sheetError) {
+                console.warn(`Error al leer hoja ${sheet.name}:`, sheetError.message);
+            }
+        }
+
+        return res.status(404).json({ error: 'Código de alumno no encontrado' });
+    } catch (error) {
+        console.error('Error al buscar alumno:', error);
         res.status(500).json({ error: 'Error al buscar alumno en Google Sheets' });
     }
 });
 
-// API: Registrar asistencia (en la hoja de la fecha en que el alumno buscó su asiento)
+// API: Registrar asistencia (en la hoja indicada por el parámetro sheet)
 app.post('/api/attendance', async (req, res) => {
     try {
-        const { code, date } = req.body;
+        const { code, sheet } = req.body;
+
         if (!code) {
             return res.status(400).json({ success: false, error: 'Campo requerido: code' });
         }
-
-        // Usar la fecha enviada por el cliente si es válida, sino la de hoy
-        const sheetName = (date && isValidSheetDate(date)) ? date : getTodaySheetName();
+        if (!sheet || !isValidSheet(sheet)) {
+            return res.status(400).json({ success: false, error: 'Campo requerido: sheet (formato dd-mm-yyyy-G-E)' });
+        }
 
         const normalizedCode = code.trim().toLowerCase();
-        const students = await fetchStudents(sheetName);
+        const students = await fetchStudents(sheet);
         const student = students[normalizedCode];
 
         if (!student) {
@@ -260,7 +329,7 @@ app.post('/api/attendance', async (req, res) => {
         const timestamp = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
 
         // Escribir en Google Sheet columna H (con 3 reintentos)
-        const written = await writeAttendanceToSheet(sheetName, student.sheetRow, timestamp);
+        const written = await writeAttendanceToSheet(sheet, student.sheetRow, timestamp);
 
         if (!written) {
             console.error(`No se pudo escribir asistencia en Google Sheet para ${normalizedCode} después de 3 intentos`);
@@ -270,16 +339,16 @@ app.post('/api/attendance', async (req, res) => {
             });
         }
 
-        // Notificar a los visores conectados por SSE (incluye fecha para filtrar)
+        // Notificar a los visores conectados por SSE
         notifySSEClients({
             code: normalizedCode,
             name: student.name,
             seat: student.seat,
             timestamp,
-            date: sheetName
+            sheet
         });
 
-        console.log(`Asistencia registrada (${sheetName}): ${student.name} (${normalizedCode}) -> ${student.seat} a las ${timestamp}`);
+        console.log(`Asistencia registrada (${sheet}): ${student.name} (${normalizedCode}) -> ${student.seat} a las ${timestamp}`);
         res.json({ success: true, timestamp });
     } catch (error) {
         console.error('Error registrando asistencia:', error);
@@ -287,7 +356,7 @@ app.post('/api/attendance', async (req, res) => {
         if (error.message && error.message.includes('Unable to parse range')) {
             return res.status(404).json({
                 success: false,
-                error: 'No hay ceremonia de graduación programada para hoy'
+                error: 'No se encontró la hoja de graduación indicada'
             });
         }
 
@@ -295,20 +364,20 @@ app.post('/api/attendance', async (req, res) => {
     }
 });
 
-// API: Obtener registros de asistencia (con fecha opcional, default: hoy)
+// API: Obtener registros de asistencia de una hoja específica (parámetro: sheet=dd-mm-yyyy-G-E)
 app.get('/api/attendance', async (req, res) => {
     try {
-        const sheetName = req.query.date || getTodaySheetName();
+        const sheetName = req.query.sheet;
 
-        if (!isValidSheetDate(sheetName)) {
-            return res.status(400).json({ error: 'Formato de fecha inválido. Use dd-mm-yyyy.' });
+        if (!sheetName || !isValidSheet(sheetName)) {
+            return res.status(400).json({ error: 'Parámetro sheet inválido. Use formato dd-mm-yyyy-G-E.' });
         }
 
         const attendees = await fetchAttendanceFromSheet(sheetName);
         res.json({
             count: attendees.length,
             students: attendees,
-            date: sheetName
+            sheet: sheetName
         });
     } catch (error) {
         console.error('Error al obtener asistencia desde Google Sheets:', error);
@@ -317,7 +386,7 @@ app.get('/api/attendance', async (req, res) => {
             return res.status(404).json({
                 count: 0,
                 students: [],
-                error: 'No se encontró hoja para la fecha indicada'
+                error: 'No se encontró hoja para el parámetro indicado'
             });
         }
 
@@ -325,9 +394,9 @@ app.get('/api/attendance', async (req, res) => {
     }
 });
 
-// SSE: Endpoint para eventos en tiempo real (filtrado por fecha)
+// SSE: Endpoint para eventos en tiempo real (filtrado por hoja)
 app.get('/api/attendance/events', (req, res) => {
-    const date = req.query.date || getTodaySheetName();
+    const sheet = req.query.sheet;
 
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
@@ -337,8 +406,8 @@ app.get('/api/attendance/events', (req, res) => {
 
     res.write(':connected\n\n');
 
-    sseClients.push({ res, date });
-    console.log(`Visor SSE conectado (${date}). Total clientes: ${sseClients.length}`);
+    sseClients.push({ res, sheet });
+    console.log(`Visor SSE conectado (${sheet}). Total clientes: ${sseClients.length}`);
 
     req.on('close', () => {
         const index = sseClients.findIndex(c => c.res === res);

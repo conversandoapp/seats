@@ -1240,7 +1240,7 @@
             }
         });
 
-        // Buscar asiento por código de alumno (consulta en tiempo real, hoja de hoy)
+        // Buscar asiento por código de alumno (busca en todas las hojas activas)
         async function findSeat() {
             const input = document.getElementById('studentCode').value.trim().toLowerCase();
             const errorDiv = document.getElementById('errorMessage');
@@ -1255,13 +1255,12 @@
             errorDiv.innerHTML = '<p class="error-message" style="color: #999;">Buscando...</p>';
 
             try {
-                const todayDate = getTodayDate();
-                const response = await fetch(`/api/students/${encodeURIComponent(input)}?date=${todayDate}`);
+                const response = await fetch(`/api/students/${encodeURIComponent(input)}`);
 
                 if (response.status === 404) {
                     const errorData = await response.json();
                     if (errorData.noSheet) {
-                        errorDiv.innerHTML = '<p class="error-message">No hay ceremonia de graduación programada para hoy.</p>';
+                        errorDiv.innerHTML = '<p class="error-message">No hay ceremonia de graduación activa en este momento.</p>';
                     } else {
                         errorDiv.innerHTML = '<p class="error-message">Código de alumno no encontrado. Verifica tu código.</p>';
                     }
@@ -1312,16 +1311,16 @@
             statusEl.style.cssText = 'color: #f0ad4e; font-size: 0.95em; margin-top: 8px;';
             statusEl.textContent = 'Registrando asistencia...';
 
-            // Fecha de la ceremonia (calculada una sola vez para usar en ambas llamadas)
-            const attendanceDate = getTodayDate();
+            // Nombre de la hoja donde se encontró al alumno (viene del API de búsqueda)
+            const sheetName = studentData.sheetName;
 
             // Registrar asistencia en el servidor (con reintentos en backend)
-            // Se envía la fecha para asegurar que se registre en la hoja correcta
+            // Se envía el nombre completo de la hoja para asegurar que se registre en la correcta
             try {
                 const response = await fetch('/api/attendance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: studentCode, date: attendanceDate })
+                    body: JSON.stringify({ code: studentCode, sheet: sheetName })
                 });
 
                 const result = await response.json();
@@ -1342,7 +1341,7 @@
 
             // Cargar todos los alumnos del sheet: asientos válidos + mapa para tooltips
             try {
-                const allStudentsResp = await fetch(`/api/students?date=${attendanceDate}`);
+                const allStudentsResp = await fetch(`/api/students?sheet=${sheetName}`);
                 if (allStudentsResp.ok) {
                     const allStudentsData = await allStudentsResp.json();
                     validSeats = new Set();

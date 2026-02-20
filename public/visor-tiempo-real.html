@@ -497,9 +497,124 @@
             color: #2c3e50;
             font-family: 'Courier New', monospace;
             cursor: pointer;
-            min-width: 180px;
+            min-width: 260px;
             text-align: center;
         }
+
+        .activate-button {
+            padding: 10px 20px;
+            font-size: 0.95em;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #ffffff;
+            border: 2px solid #2c3e50;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-family: 'Arial', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .activate-button:hover {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 62, 80, 0.35);
+        }
+
+        /* Modal de activación de eventos */
+        .activation-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .activation-modal-overlay.open {
+            display: flex;
+        }
+
+        .activation-modal-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 640px;
+            width: 92%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            border: 3px solid #ff6b54;
+        }
+
+        .activation-modal-box h2 {
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 1.4em;
+        }
+
+        .activation-modal-box .modal-subtitle {
+            color: #666;
+            font-size: 0.9em;
+            font-family: 'Arial', sans-serif;
+            margin-bottom: 20px;
+        }
+
+        .modal-sheet-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            border-bottom: 1px solid #eee;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .modal-sheet-row:last-child {
+            border-bottom: none;
+        }
+
+        .modal-sheet-info strong {
+            color: #2c3e50;
+            font-size: 1em;
+        }
+
+        .modal-sheet-info span {
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .modal-toggle-btn {
+            border: none;
+            padding: 7px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9em;
+            transition: opacity 0.2s;
+        }
+
+        .modal-toggle-btn:hover { opacity: 0.85; }
+
+        .modal-close-btn {
+            margin-top: 20px;
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            font-family: 'Arial', sans-serif;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .modal-close-btn:hover { background: #ccc; }
 
         .date-select:focus {
             outline: none;
@@ -548,6 +663,8 @@
 
         <div class="controls">
             <button class="refresh-button" onclick="loadLoggedUsers()">Actualizar Ahora</button>
+            &nbsp;&nbsp;
+            <button class="activate-button" onclick="openActivationModal()">Gestionar Eventos</button>
             <div class="auto-refresh">
                 <label>
                     <input type="checkbox" id="autoRefreshCheck" checked onchange="toggleAutoRefresh()">
@@ -615,6 +732,19 @@
         <div class="last-update" id="lastUpdate">Última actualización: --:--:--</div>
     </div>
 
+    <!-- Modal de gestión de eventos de graduación -->
+    <div id="activationModal" class="activation-modal-overlay">
+        <div class="activation-modal-box">
+            <h2>Gestión de Eventos de Graduación</h2>
+            <p class="modal-subtitle">
+                Los eventos <strong>Activos</strong> son buscados por el portal del graduado.<br>
+                Los eventos <strong>Inactivos</strong> no aparecen en la búsqueda de alumnos.
+            </p>
+            <div id="modalSheetList">Cargando...</div>
+            <button class="modal-close-btn" onclick="closeActivationModal()">Cerrar</button>
+        </div>
+    </div>
+
     <!-- Tooltip flotante -->
     <div class="seat-tooltip" id="seatTooltip">
         <div class="tooltip-name"></div>
@@ -634,10 +764,10 @@
         let loggedUsers = [];
         // Mapa para acceso rápido: seat id -> user data
         let occupiedSeats = {};
-        // Fecha actualmente seleccionada y referencia SSE
-        let currentDate = '';
+        // Hoja actualmente seleccionada (nombre completo: dd-mm-yyyy-G-E) y referencia SSE
+        let currentSheet = '';
         let eventSource = null;
-        // Asientos válidos del Google Sheet para la fecha seleccionada
+        // Asientos válidos del Google Sheet para la hoja seleccionada
         let validSeats = new Set();
         let blockValidCounts = { A: 0, B: 0, C: 0, D: 0 };
         // Mapa asiento -> alumno asignado según el sheet (para tooltips en asientos no ocupados)
@@ -660,7 +790,14 @@
             return new Date(yyyy, mm - 1, dd);
         }
 
-        // Cargar fechas disponibles desde el spreadsheet
+        // Parsear nombre de hoja dd-mm-yyyy-G-E
+        function parseSheetInfo(name) {
+            const m = name.match(/^(\d{2}-\d{2}-\d{4})-([A-Z])-([AD])$/);
+            if (!m) return null;
+            return { name, date: m[1], graduation: m[2], state: m[3], active: m[3] === 'A' };
+        }
+
+        // Cargar eventos de graduación disponibles desde el spreadsheet
         async function loadAvailableDates() {
             const select = document.getElementById('dateSelect');
             const statusEl = document.getElementById('dateStatus');
@@ -669,75 +806,77 @@
                 const response = await fetch('/api/sheets');
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
-                const dates = data.sheets || [];
+                const sheets = data.sheets || []; // array de objetos { name, date, graduation, state, active }
 
-                // Ordenar cronológicamente (más reciente primero)
-                dates.sort((a, b) => parseDateStr(b) - parseDateStr(a));
+                // Ordenar: fecha más reciente primero, luego por letra de graduación
+                sheets.sort((a, b) => {
+                    const diff = parseDateStr(b.date) - parseDateStr(a.date);
+                    if (diff !== 0) return diff;
+                    return a.graduation.localeCompare(b.graduation);
+                });
 
                 select.innerHTML = '';
 
-                if (dates.length === 0) {
+                if (sheets.length === 0) {
                     select.innerHTML = '<option value="">No hay ceremonias disponibles</option>';
                     return;
                 }
 
                 const today = getTodayDate();
-                let todayFound = false;
+                let firstSheet = null;
 
-                dates.forEach(dateStr => {
+                sheets.forEach(s => {
                     const option = document.createElement('option');
-                    option.value = dateStr;
-
-                    if (dateStr === today) {
-                        option.textContent = `${dateStr} (Hoy)`;
-                        todayFound = true;
-                    } else {
-                        option.textContent = dateStr;
-                    }
-
+                    option.value = s.name; // nombre completo como valor
+                    const estadoLabel = s.active ? 'Activo' : 'Inactivo';
+                    let label = `${s.date} — Grad ${s.graduation} (${estadoLabel})`;
+                    if (s.date === today) label += ' · Hoy';
+                    option.textContent = label;
+                    if (!firstSheet) firstSheet = s.name;
                     select.appendChild(option);
                 });
 
-                // Default: hoy si existe, sino la fecha más reciente
-                if (todayFound) {
-                    select.value = today;
-                    currentDate = today;
+                // Default: primer evento de hoy si existe, sino el más reciente
+                const todaySheets = sheets.filter(s => s.date === today);
+                if (todaySheets.length > 0) {
+                    currentSheet = todaySheets[0].name;
                     statusEl.textContent = 'Mostrando ceremonia de hoy';
                     statusEl.style.color = '#5cb85c';
                 } else {
-                    select.value = dates[0];
-                    currentDate = dates[0];
-                    statusEl.textContent = 'No hay ceremonia hoy. Mostrando fecha más reciente.';
+                    currentSheet = firstSheet || '';
+                    statusEl.textContent = 'No hay ceremonia hoy. Mostrando evento más reciente.';
                     statusEl.style.color = '#f0ad4e';
                 }
+                select.value = currentSheet;
 
-                // Cargar datos de la fecha seleccionada
+                // Cargar datos del evento seleccionado
                 loadLoggedUsers();
                 loadValidSeats();
                 reconnectSSE();
 
             } catch (error) {
-                console.error('Error cargando fechas disponibles:', error);
-                select.innerHTML = '<option value="">Error al cargar fechas</option>';
+                console.error('Error cargando eventos disponibles:', error);
+                select.innerHTML = '<option value="">Error al cargar eventos</option>';
             }
         }
 
-        // Cambio de fecha en el selector
+        // Cambio de evento en el selector
         function onDateChanged() {
             const select = document.getElementById('dateSelect');
             const statusEl = document.getElementById('dateStatus');
-            currentDate = select.value;
+            currentSheet = select.value;
 
+            const info = parseSheetInfo(currentSheet);
             const today = getTodayDate();
-            if (currentDate === today) {
+            if (info && info.date === today) {
                 statusEl.textContent = 'Mostrando ceremonia de hoy';
                 statusEl.style.color = '#5cb85c';
-            } else {
-                statusEl.textContent = `Mostrando datos de ${currentDate}`;
+            } else if (info) {
+                statusEl.textContent = `Mostrando datos de ${info.date} — Grad ${info.graduation}`;
                 statusEl.style.color = '#666';
             }
 
-            // Recargar todo para la nueva fecha
+            // Recargar todo para el nuevo evento
             loadLoggedUsers();
             loadValidSeats();
             reconnectSSE();
@@ -831,10 +970,10 @@
             tooltip.style.display = 'none';
         }
 
-        // Cargar asientos válidos del Google Sheet para la fecha seleccionada
+        // Cargar asientos válidos del Google Sheet para el evento seleccionado
         async function loadValidSeats() {
             try {
-                const response = await fetch(`/api/students?date=${currentDate}`);
+                const response = await fetch(`/api/students?sheet=${currentSheet}`);
                 validSeats = new Set();
                 blockValidCounts = { A: 0, B: 0, C: 0, D: 0 };
                 allStudentsMap = {};
@@ -871,14 +1010,14 @@
             });
         }
 
-        // Cargar registros de asistencia desde el servidor (para la fecha seleccionada)
+        // Cargar registros de asistencia desde el servidor (para el evento seleccionado)
         async function loadLoggedUsers() {
             try {
-                const response = await fetch(`/api/attendance?date=${currentDate}`);
+                const response = await fetch(`/api/attendance?sheet=${currentSheet}`);
                 if (response.status === 404) {
                     loggedUsers = [];
                     updateDisplay();
-                    console.warn(`No se encontró hoja para la fecha ${currentDate}`);
+                    console.warn(`No se encontró hoja para el evento ${currentSheet}`);
                     updateLastUpdateTime();
                     return;
                 }
@@ -1002,7 +1141,7 @@
         // Conexión SSE para recibir eventos de asistencia en tiempo real
         let sseUpdateTimeout = null;
         function connectSSE() {
-            eventSource = new EventSource(`/api/attendance/events?date=${currentDate}`);
+            eventSource = new EventSource(`/api/attendance/events?sheet=${currentSheet}`);
 
             eventSource.addEventListener('attendance-update', (event) => {
                 console.log('SSE: Nuevo registro de asistencia recibido', JSON.parse(event.data));
@@ -1020,9 +1159,90 @@
             };
         }
 
-        // Inicializar
+        // ===== Modal de Gestión de Eventos =====
+
+        async function openActivationModal() {
+            document.getElementById('activationModal').classList.add('open');
+            await refreshModalList();
+        }
+
+        function closeActivationModal() {
+            document.getElementById('activationModal').classList.remove('open');
+        }
+
+        async function refreshModalList() {
+            const list = document.getElementById('modalSheetList');
+            list.innerHTML = '<p style="color:#999; font-family:Arial,sans-serif;">Cargando...</p>';
+
+            try {
+                const response = await fetch('/api/sheets');
+                const data = await response.json();
+                const sheets = data.sheets || [];
+
+                if (sheets.length === 0) {
+                    list.innerHTML = '<p style="color:#999; font-family:Arial,sans-serif; padding:10px;">No se encontraron hojas con formato válido (dd-mm-yyyy-G-E).</p>';
+                    return;
+                }
+
+                // Ordenar: fecha más reciente primero, luego por letra de graduación
+                sheets.sort((a, b) => {
+                    const diff = parseDateStr(b.date) - parseDateStr(a.date);
+                    if (diff !== 0) return diff;
+                    return a.graduation.localeCompare(b.graduation);
+                });
+
+                list.innerHTML = sheets.map(s => `
+                    <div class="modal-sheet-row">
+                        <div class="modal-sheet-info">
+                            <strong>${s.date} — Graduación ${s.graduation}</strong>
+                            <span style="color:${s.active ? '#5cb85c' : '#d9534f'};">
+                                ${s.active ? '● Activo' : '○ Inactivo'}
+                            </span>
+                        </div>
+                        <button class="modal-toggle-btn"
+                                style="background:${s.active ? '#d9534f' : '#5cb85c'}; color:#fff;"
+                                onclick="toggleSheetState('${s.name}', '${s.state}')">
+                            ${s.active ? 'Desactivar' : 'Activar'}
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                list.innerHTML = '<p style="color:#d9534f; font-family:Arial,sans-serif;">Error al cargar la lista de eventos.</p>';
+                console.error('Error cargando lista de eventos:', err);
+            }
+        }
+
+        async function toggleSheetState(sheetName, currentState) {
+            const newState = currentState === 'A' ? 'D' : 'A';
+            try {
+                const response = await fetch('/api/sheets/set-state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sheetName, state: newState })
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    alert('Error al cambiar estado: ' + (err.error || 'Error desconocido'));
+                    return;
+                }
+            } catch (err) {
+                alert('Error de conexión al cambiar estado del evento.');
+                console.error(err);
+                return;
+            }
+            // Refrescar lista del modal y dropdown principal
+            await refreshModalList();
+            await loadAvailableDates();
+        }
+
+        // Cerrar modal al hacer clic en el overlay (fuera del cuadro)
+        document.getElementById('activationModal').addEventListener('click', function(e) {
+            if (e.target === this) closeActivationModal();
+        });
+
+        // ===== Inicializar =====
         createAllBlockGrids();
-        loadAvailableDates(); // Carga fechas, selecciona la de hoy, y llama loadLoggedUsers() + connectSSE()
+        loadAvailableDates(); // Carga eventos, selecciona el de hoy, y llama loadLoggedUsers() + connectSSE()
         toggleAutoRefresh();
     </script>
 </body>

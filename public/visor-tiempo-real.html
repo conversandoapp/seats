@@ -586,18 +586,55 @@
             margin-left: 10px;
         }
 
-        .modal-toggle-btn {
-            border: none;
-            padding: 7px 16px;
-            border-radius: 4px;
-            cursor: pointer;
+        /* Toggle switch de evento */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .toggle-label-text {
+            font-size: 0.82em;
             font-weight: 600;
             font-family: 'Arial', sans-serif;
-            font-size: 0.9em;
-            transition: opacity 0.2s;
+            color: #555;
+            min-width: 50px;
+            text-align: right;
+            user-select: none;
         }
-
-        .modal-toggle-btn:hover { opacity: 0.85; }
+        .toggle-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .toggle-track {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+            border-radius: 12px;
+            background: #ccc;
+            cursor: pointer;
+            transition: background 0.25s ease;
+        }
+        .toggle-track::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+            transition: transform 0.25s ease;
+        }
+        .toggle-input:checked + .toggle-track { background: #5cb85c; }
+        .toggle-input:checked + .toggle-track::after { transform: translateX(22px); }
+        .toggle-input:disabled + .toggle-track { opacity: 0.45; cursor: not-allowed; }
+        .toggle-input:focus-visible + .toggle-track { outline: 2px solid #ff6b54; outline-offset: 2px; }
 
         .modal-close-btn {
             margin-top: 20px;
@@ -1191,28 +1228,37 @@
                     return a.graduation.localeCompare(b.graduation);
                 });
 
-                list.innerHTML = sheets.map(s => `
+                list.innerHTML = sheets.map(s => {
+                    const switchId = `toggle-${s.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    return `
                     <div class="modal-sheet-row">
                         <div class="modal-sheet-info">
                             <strong>${s.date} — Graduación ${s.graduation}</strong>
-                            <span style="color:${s.active ? '#5cb85c' : '#d9534f'};">
-                                ${s.active ? '● Activo' : '○ Inactivo'}
-                            </span>
                         </div>
-                        <button class="modal-toggle-btn"
-                                style="background:${s.active ? '#d9534f' : '#5cb85c'}; color:#fff;"
-                                onclick="toggleSheetState('${s.name}', '${s.state}')">
-                            ${s.active ? 'Desactivar' : 'Activar'}
-                        </button>
-                    </div>
-                `).join('');
+                        <div class="toggle-wrapper">
+                            <span class="toggle-label-text">${s.active ? 'Activo' : 'Inactivo'}</span>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    class="toggle-input"
+                                    id="${switchId}"
+                                    ${s.active ? 'checked' : ''}
+                                    aria-label="${s.active ? 'Desactivar' : 'Activar'} evento ${s.date} Graduación ${s.graduation}"
+                                    onchange="toggleSheetState('${s.name}', '${s.state}', this)"
+                                >
+                                <span class="toggle-track" aria-hidden="true"></span>
+                            </label>
+                        </div>
+                    </div>`;
+                }).join('');
             } catch (err) {
                 list.innerHTML = '<p style="color:#d9534f; font-family:Arial,sans-serif;">Error al cargar la lista de eventos.</p>';
                 console.error('Error cargando lista de eventos:', err);
             }
         }
 
-        async function toggleSheetState(sheetName, currentState) {
+        async function toggleSheetState(sheetName, currentState, inputEl) {
+            if (inputEl) inputEl.disabled = true;
             const newState = currentState === 'A' ? 'D' : 'A';
             try {
                 const response = await fetch('/api/sheets/set-state', {
@@ -1222,15 +1268,18 @@
                 });
                 if (!response.ok) {
                     const err = await response.json();
+                    if (inputEl) { inputEl.checked = !inputEl.checked; inputEl.disabled = false; }
                     alert('Error al cambiar estado: ' + (err.error || 'Error desconocido'));
                     return;
                 }
             } catch (err) {
+                if (inputEl) { inputEl.checked = !inputEl.checked; inputEl.disabled = false; }
                 alert('Error de conexión al cambiar estado del evento.');
                 console.error(err);
                 return;
             }
             // Refrescar lista del modal y dropdown principal
+            // (refreshModalList recrea el DOM, no es necesario re-habilitar inputEl)
             await refreshModalList();
             await loadAvailableDates();
         }

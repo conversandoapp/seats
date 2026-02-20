@@ -1257,18 +1257,16 @@
             try {
                 const response = await fetch(`/api/students/${encodeURIComponent(input)}`);
 
-                if (response.status === 404) {
+                if (!response.ok) {
                     const errorData = await response.json();
-                    if (errorData.noSheet) {
-                        errorDiv.innerHTML = '<p class="error-message">No hay ceremonia de graduación activa en este momento.</p>';
+                    if (errorData.ceremoniaInactiva) {
+                        errorDiv.innerHTML = '<p class="error-message">Tu ceremonia de graduación no está activa en este momento. Por favor, consulta con el personal.</p>';
+                    } else if (errorData.noSheet) {
+                        errorDiv.innerHTML = '<p class="error-message">No hay ceremonias de graduación activas en este momento.</p>';
                     } else {
                         errorDiv.innerHTML = '<p class="error-message">Código de alumno no encontrado. Verifica tu código.</p>';
                     }
                     return;
-                }
-
-                if (!response.ok) {
-                    throw new Error(`Error del servidor: ${response.status}`);
                 }
 
                 const studentData = await response.json();

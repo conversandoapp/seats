@@ -262,7 +262,10 @@ app.get('/api/students', async (req, res) => {
     }
 });
 
-// API: Buscar un alumno por código (busca en TODAS las hojas activas)
+// API: Buscar un alumno por código
+// Paso 1: busca en hojas ACTIVAS → si lo encuentra, retorna datos normalmente
+// Paso 2: busca en hojas INACTIVAS → si lo encuentra allí, retorna 403 (ceremonia inactiva)
+// Paso 3: no encontrado en ninguna hoja → retorna 404
 app.get('/api/students/:code', async (req, res) => {
     try {
         const code = req.params.code.trim().toLowerCase();
@@ -274,20 +277,22 @@ app.get('/api/students/:code', async (req, res) => {
             fields: 'sheets.properties.title'
         });
 
-        const activeSheets = meta.data.sheets
+        const allValidSheets = meta.data.sheets
             .map(s => s.properties.title)
             .filter(isValidSheet)
-            .map(parseSheetInfo)
-            .filter(s => s.active);
+            .map(parseSheetInfo);
 
-        if (activeSheets.length === 0) {
+        const activeSheets   = allValidSheets.filter(s => s.active);
+        const inactiveSheets = allValidSheets.filter(s => !s.active);
+
+        if (allValidSheets.length === 0) {
             return res.status(404).json({
                 error: 'No hay ceremonias de graduación activas',
                 noSheet: true
             });
         }
 
-        // Buscar el alumno en cada hoja activa
+        // Paso 1: buscar en hojas activas
         for (const sheet of activeSheets) {
             try {
                 const students = await fetchStudents(sheet.name);
@@ -295,10 +300,33 @@ app.get('/api/students/:code', async (req, res) => {
                     return res.json({ ...students[code], sheetName: sheet.name });
                 }
             } catch (sheetError) {
-                console.warn(`Error al leer hoja ${sheet.name}:`, sheetError.message);
+                console.warn(`Error al leer hoja activa ${sheet.name}:`, sheetError.message);
             }
         }
 
+        // Paso 2: buscar en hojas inactivas para dar un mensaje de error más claro
+        for (const sheet of inactiveSheets) {
+            try {
+                const students = await fetchStudents(sheet.name);
+                if (students[code]) {
+                    // Alumno existe pero su ceremonia está desactivada
+                    return res.status(403).json({
+                        error: 'Tu ceremonia de graduación no está activa en este momento',
+                        ceremoniaInactiva: true
+                    });
+                }
+            } catch (sheetError) {
+                console.warn(`Error al leer hoja inactiva ${sheet.name}:`, sheetError.message);
+            }
+        }
+
+        // No encontrado en ninguna hoja
+        if (activeSheets.length === 0) {
+            return res.status(404).json({
+                error: 'No hay ceremonias de graduación activas',
+                noSheet: true
+            });
+        }
         return res.status(404).json({ error: 'Código de alumno no encontrado' });
     } catch (error) {
         console.error('Error al buscar alumno:', error);

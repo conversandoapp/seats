@@ -1260,7 +1260,7 @@
                 if (response.status === 404) {
                     const errorData = await response.json();
                     if (errorData.noSheet) {
-                        errorDiv.innerHTML = '<p class="error-message">No hay ceremonia de graduación activa en este momento.</p>';
+                        errorDiv.innerHTML = '<p class="error-message">La fecha de graduación no está activa. No es posible acceder al portal en este momento.</p>';
                     } else {
                         errorDiv.innerHTML = '<p class="error-message">Código de alumno no encontrado. Verifica tu código.</p>';
                     }
@@ -1329,6 +1329,9 @@
                     statusEl.style.color = '#5cb85c';
                     statusEl.textContent = 'Asistencia registrada correctamente';
                     setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+                } else if (result.inactive) {
+                    statusEl.style.color = '#d9534f';
+                    statusEl.innerHTML = 'La fecha de graduación no está activa.<br><strong>No es posible registrar asistencia en este momento.</strong>';
                 } else {
                     statusEl.style.color = '#d9534f';
                     statusEl.innerHTML = 'No se pudo registrar tu asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';

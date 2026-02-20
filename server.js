@@ -318,6 +318,16 @@ app.post('/api/attendance', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Campo requerido: sheet (formato dd-mm-yyyy-G-E)' });
         }
 
+        // Verificar que la fecha/hoja esté activa antes de registrar asistencia
+        const sheetInfo = parseSheetInfo(sheet);
+        if (!sheetInfo || !sheetInfo.active) {
+            return res.status(403).json({
+                success: false,
+                error: 'La fecha de graduación no está activa. No es posible registrar asistencia.',
+                inactive: true
+            });
+        }
+
         const normalizedCode = code.trim().toLowerCase();
         const students = await fetchStudents(sheet);
         const student = students[normalizedCode];

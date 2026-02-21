@@ -272,6 +272,17 @@
             animation: seatPulse 0.5s;
         }
 
+        /* Asiento extra (sufijo "i") — borde naranja para distinguirlo */
+        .seat.seat-extra {
+            border-color: #e67e22;
+            background: #fff8f0;
+        }
+
+        .seat.seat-extra.occupied {
+            background: #c41e3a;
+            border-color: #8b0000;
+        }
+
         /* Estrado central vertical */
         .stage-center {
             background: linear-gradient(to bottom, #2c3e50, #34495e);
@@ -521,6 +532,121 @@
             box-shadow: 0 5px 15px rgba(44, 62, 80, 0.35);
         }
 
+        .extra-student-button {
+            padding: 10px 20px;
+            font-size: 0.95em;
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            color: #ffffff;
+            border: 2px solid #e67e22;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-family: 'Arial', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .extra-student-button:hover {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(230, 126, 34, 0.35);
+        }
+
+        .extra-student-button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* === Modal Alumno Extra === */
+        .extra-modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        .extra-modal-form label {
+            font-size: 0.82em;
+            font-weight: 700;
+            color: #2c3e50;
+            font-family: 'Arial', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .extra-modal-form input,
+        .extra-modal-form select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95em;
+            font-family: 'Arial', sans-serif;
+            color: #2c3e50;
+            transition: border-color 0.2s;
+        }
+
+        .extra-modal-form input:focus,
+        .extra-modal-form select:focus {
+            outline: none;
+            border-color: #e67e22;
+        }
+
+        .extra-modal-form .form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .extra-modal-form .form-row > div {
+            flex: 1;
+        }
+
+        .extra-modal-preview {
+            background: #fff3e0;
+            border: 2px solid #e67e22;
+            border-radius: 4px;
+            padding: 10px 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            font-weight: 700;
+            color: #d35400;
+            text-align: center;
+            min-height: 36px;
+        }
+
+        .extra-modal-msg {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.88em;
+            font-family: 'Arial', sans-serif;
+            font-weight: 600;
+        }
+
+        .extra-modal-msg.error { background: #fdecea; color: #c0392b; border: 1px solid #e74c3c; }
+        .extra-modal-msg.success { background: #eafaf1; color: #1e8449; border: 1px solid #27ae60; }
+
+        .extra-submit-btn {
+            padding: 11px;
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            font-weight: 700;
+            font-family: 'Arial', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 6px;
+        }
+
+        .extra-submit-btn:hover { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
+        .extra-submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
         /* Modal de activación de eventos */
         .activation-modal-overlay {
             display: none;
@@ -702,6 +828,8 @@
             <button class="refresh-button" onclick="loadLoggedUsers()">Actualizar Ahora</button>
             &nbsp;&nbsp;
             <button class="activate-button" onclick="openActivationModal()">Gestionar Eventos</button>
+            &nbsp;&nbsp;
+            <button class="extra-student-button" id="btnAgregarExtra" onclick="openExtraStudentModal()" disabled>+ Alumno Extra</button>
             <div class="auto-refresh">
                 <label>
                     <input type="checkbox" id="autoRefreshCheck" checked onchange="toggleAutoRefresh()">
@@ -782,6 +910,73 @@
         </div>
     </div>
 
+    <!-- Modal Agregar Alumno Extra -->
+    <div id="extraStudentModal" class="activation-modal-overlay">
+        <div class="activation-modal-box">
+            <h2>Agregar Alumno Extra</h2>
+            <p class="modal-subtitle">
+                Se insertará un asiento tipo <strong>i</strong> en la fila indicada.<br>
+                Máximo <strong>2 alumnos extra por fila</strong>.
+            </p>
+            <div class="extra-modal-form">
+                <div class="form-row">
+                    <div>
+                        <label for="extraCodigo">Código</label>
+                        <input type="text" id="extraCodigo" placeholder="ej: u200910999" oninput="updateExtraPreview()">
+                    </div>
+                    <div>
+                        <label for="extraCarrera">Carrera</label>
+                        <input type="text" id="extraCarrera" placeholder="ej: Ingeniería" oninput="updateExtraPreview()">
+                    </div>
+                </div>
+                <div>
+                    <label for="extraNombres">Nombres</label>
+                    <input type="text" id="extraNombres" placeholder="ej: Sergio Andrés" oninput="updateExtraPreview()">
+                </div>
+                <div>
+                    <label for="extraApellidos">Apellidos</label>
+                    <input type="text" id="extraApellidos" placeholder="ej: García López" oninput="updateExtraPreview()">
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label for="extraBloque">Bloque</label>
+                        <select id="extraBloque" onchange="updateExtraPreview()">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="extraFila">Fila</label>
+                        <select id="extraFila" onchange="updateExtraPreview()">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="extraPosicion">Insertar después de posición</label>
+                        <select id="extraPosicion" onchange="updateExtraPreview()">
+                            <option value="">-- posición en fila --</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label>Asiento asignado (calculado automáticamente)</label>
+                    <div class="extra-modal-preview" id="extraPreview">—</div>
+                </div>
+            </div>
+            <div id="extraStudentMsg" class="extra-modal-msg" style="display:none"></div>
+            <button class="extra-submit-btn" id="extraSubmitBtn" onclick="submitExtraStudent()">Agregar Alumno</button>
+            <button class="modal-close-btn" onclick="closeExtraStudentModal()">Cancelar</button>
+        </div>
+    </div>
+
     <!-- Tooltip flotante -->
     <div class="seat-tooltip" id="seatTooltip">
         <div class="tooltip-name"></div>
@@ -794,8 +989,7 @@
         const BLOCKS = ['A', 'B', 'C', 'D'];
         const ROWS_PER_BLOCK = 7;
         const SEATS_PER_ROW = 21;
-        const SEATS_PER_BLOCK = ROWS_PER_BLOCK * SEATS_PER_ROW; // 147
-        const TOTAL_SEATS = BLOCKS.length * SEATS_PER_BLOCK; // 588
+        const MAX_EXTRA_PER_ROW = 2; // máximo de alumnos "i" por fila
 
         let autoRefreshInterval = null;
         let loggedUsers = [];
@@ -919,13 +1113,39 @@
             reconnectSSE();
         }
 
-        // Crear los grids de los 4 bloques al cargar
+        // Parsear el valor de asiento (ej: "3", "3i", "21ii") → {num, suffix}
+        function parseSeatValue(val) {
+            const m = String(val).match(/^(\d+)(i{0,2})$/);
+            return m ? { num: parseInt(m[1]), suffix: m[2] } : null;
+        }
+
+        // Ordenar IDs de asiento dentro de una fila: por número base ASC, luego por sufijo ('' < 'i' < 'ii')
+        function sortSeatIds(ids) {
+            return ids.slice().sort((a, b) => {
+                const pa = parseSeatValue(a.split('-')[1]);
+                const pb = parseSeatValue(b.split('-')[1]);
+                if (!pa || !pb) return 0;
+                if (pa.num !== pb.num) return pa.num - pb.num;
+                return pa.suffix.length - pb.suffix.length;
+            });
+        }
+
+        // Construir los grids de los 4 bloques a partir de allStudentsMap (data-driven)
         function createAllBlockGrids() {
             BLOCKS.forEach(blockLetter => {
                 const grid = document.getElementById(`blockGrid${blockLetter}`);
                 grid.innerHTML = '';
 
                 for (let rowNum = 1; rowNum <= ROWS_PER_BLOCK; rowNum++) {
+                    // Obtener todos los seatIds de esta fila en este bloque
+                    const rowSeatIds = Object.keys(allStudentsMap).filter(seatId => {
+                        const s = allStudentsMap[seatId];
+                        return s.block === blockLetter && s.row === rowNum;
+                    });
+
+                    // No renderizar la fila si no tiene asientos asignados
+                    if (rowSeatIds.length === 0) continue;
+
                     const rowDiv = document.createElement('div');
                     rowDiv.className = 'block-row';
 
@@ -935,22 +1155,24 @@
                     label.textContent = rowNum;
                     rowDiv.appendChild(label);
 
-                    // 21 asientos por fila
-                    const startSeat = (rowNum - 1) * SEATS_PER_ROW + 1;
-                    for (let i = 0; i < SEATS_PER_ROW; i++) {
-                        const seatNumber = startSeat + i;
-                        const seatId = `${blockLetter}-${seatNumber}`;
+                    // Separar regulares de extras para construir el orden completo
+                    const regularIds = rowSeatIds.filter(id => !/i+$/.test(id.split('-')[1]));
+                    const extraIds = rowSeatIds.filter(id => /i+$/.test(id.split('-')[1]));
 
+                    // Construir lista ordenada: regulares + extras intercalados
+                    const allIds = sortSeatIds([...regularIds, ...extraIds]);
+
+                    allIds.forEach(seatId => {
                         const seat = document.createElement('div');
                         seat.className = 'seat';
                         seat.dataset.seat = seatId;
-
-                        // Eventos de tooltip
+                        if (/i+$/.test(seatId.split('-')[1])) {
+                            seat.classList.add('seat-extra');
+                        }
                         seat.addEventListener('mouseenter', showTooltip);
                         seat.addEventListener('mouseleave', hideTooltip);
-
                         rowDiv.appendChild(seat);
-                    }
+                    });
 
                     grid.appendChild(rowDiv);
                 }
@@ -965,19 +1187,25 @@
             if (!seatId) return;
 
             const user = occupiedSeats[seatId];
-            const block = seatId.split('-')[0];
-            const seatNum = parseInt(seatId.split('-')[1]);
-            const row = Math.ceil(seatNum / SEATS_PER_ROW);
-
             const assignedStudent = allStudentsMap[seatId];
+
+            // Determinar la fila: preferir el dato del mapa; fallback al cálculo numérico
+            let row;
+            if (assignedStudent && assignedStudent.row) {
+                row = assignedStudent.row;
+            } else {
+                row = Math.ceil(parseInt(seatId.split('-')[1]) / SEATS_PER_ROW);
+            }
+
+            const isExtra = /i+$/.test(seatId.split('-')[1]);
+            const extraTag = isExtra ? ' · Extra' : '';
+
             if (user) {
-                // Alumno que ya ingresó
-                tooltip.querySelector('.tooltip-name').textContent = user.name;
+                tooltip.querySelector('.tooltip-name').textContent = user.name + extraTag;
                 tooltip.querySelector('.tooltip-code').textContent = user.code.toUpperCase();
                 tooltip.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
             } else if (assignedStudent) {
-                // Alumno asignado pero aún no ingresó
-                tooltip.querySelector('.tooltip-name').textContent = assignedStudent.name;
+                tooltip.querySelector('.tooltip-name').textContent = assignedStudent.name + extraTag;
                 tooltip.querySelector('.tooltip-code').textContent = `${assignedStudent.code.toUpperCase()} · Sin ingresar`;
                 tooltip.querySelector('.tooltip-seat').textContent = `Asiento: ${seatId} (Fila ${row})`;
             } else {
@@ -1029,22 +1257,13 @@
                 console.error('Error cargando asientos válidos:', error);
             }
 
-            updateSeatVisibility();
-            document.getElementById('totalSeats').textContent = validSeats.size || TOTAL_SEATS;
-        }
+            // Reconstruir grids dinámicamente según los datos cargados
+            createAllBlockGrids();
+            document.getElementById('totalSeats').textContent = validSeats.size || 0;
 
-        // Mostrar/ocultar asientos según si existen en el Google Sheet
-        function updateSeatVisibility() {
-            document.querySelectorAll('.seat[data-seat]').forEach(seatEl => {
-                const seatId = seatEl.dataset.seat;
-                if (validSeats.size > 0 && !validSeats.has(seatId)) {
-                    seatEl.style.visibility = 'hidden';
-                    seatEl.style.pointerEvents = 'none';
-                } else {
-                    seatEl.style.visibility = 'visible';
-                    seatEl.style.pointerEvents = '';
-                }
-            });
+            // Habilitar botón "Alumno Extra" solo si hay una hoja activa seleccionada
+            const btnExtra = document.getElementById('btnAgregarExtra');
+            if (btnExtra) btnExtra.disabled = !currentSheet;
         }
 
         // Cargar registros de asistencia desde el servidor (para el evento seleccionado)
@@ -1099,13 +1318,13 @@
             BLOCKS.forEach(b => {
                 const statsEl = document.getElementById(`stats${b}`);
                 if (statsEl) {
-                    const blockTotal = blockValidCounts[b] > 0 ? blockValidCounts[b] : SEATS_PER_BLOCK;
+                    const blockTotal = blockValidCounts[b] || 0;
                     statsEl.textContent = `${blockCounts[b]}/${blockTotal}`;
                 }
             });
 
             // Actualizar estadísticas globales
-            const totalSeats = validSeats.size > 0 ? validSeats.size : TOTAL_SEATS;
+            const totalSeats = validSeats.size;
             document.getElementById('totalLoggedIn').textContent = loggedUsers.length;
             document.getElementById('totalSeats').textContent = totalSeats;
             const percentage = ((loggedUsers.length / totalSeats) * 100).toFixed(1);
@@ -1289,8 +1508,175 @@
             if (e.target === this) closeActivationModal();
         });
 
+        // ===== Modal Alumno Extra =====
+
+        function openExtraStudentModal() {
+            // Limpiar formulario
+            ['extraCodigo', 'extraNombres', 'extraApellidos', 'extraCarrera'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('extraBloque').value = 'A';
+            document.getElementById('extraFila').value = '1';
+            document.getElementById('extraPreview').textContent = '—';
+            const msg = document.getElementById('extraStudentMsg');
+            msg.style.display = 'none';
+            msg.className = 'extra-modal-msg';
+            document.getElementById('extraSubmitBtn').disabled = false;
+            updateExtraPreview();
+            document.getElementById('extraStudentModal').classList.add('open');
+        }
+
+        function closeExtraStudentModal() {
+            document.getElementById('extraStudentModal').classList.remove('open');
+        }
+
+        document.getElementById('extraStudentModal').addEventListener('click', function(e) {
+            if (e.target === this) closeExtraStudentModal();
+        });
+
+        // Calcula el asiento base absoluto según bloque, fila y posición en fila
+        function calcAbsoluteSeat(filaNum, posicion) {
+            return (filaNum - 1) * SEATS_PER_ROW + posicion;
+        }
+
+        // Determina el sufijo i/ii disponible para el bloque/fila/asientoBase dado
+        // Retorna el asientoStr (ej "3i") o null si no hay espacio
+        function determineExtraSuffix(bloque, filaNum, asientoBase) {
+            // Contar extras en la fila
+            const extrasEnFila = Object.keys(allStudentsMap).filter(seatId => {
+                const s = allStudentsMap[seatId];
+                return s.block === bloque && s.row === filaNum && /i+$/.test(seatId.split('-')[1]);
+            });
+            if (extrasEnFila.length >= MAX_EXTRA_PER_ROW) return null;
+
+            const candidateI = `${asientoBase}i`;
+            const candidateII = `${asientoBase}ii`;
+            const seatIdI = `${bloque}-${candidateI}`;
+            const seatIdII = `${bloque}-${candidateII}`;
+
+            if (!allStudentsMap[seatIdI]) return candidateI;
+            if (!allStudentsMap[seatIdII]) return candidateII;
+            return null; // ambos ya existen en este asiento base
+        }
+
+        function updateExtraPreview() {
+            const bloque = document.getElementById('extraBloque').value;
+            const filaNum = parseInt(document.getElementById('extraFila').value);
+            const posicionEl = document.getElementById('extraPosicion');
+
+            // Poblar el select de posiciones con los asientos regulares de esa fila y bloque
+            const startSeat = (filaNum - 1) * SEATS_PER_ROW + 1;
+            const endSeat = startSeat + SEATS_PER_ROW - 1;
+
+            // Obtener los asientos regulares (no-i) de esta fila en el sheet
+            const regularSeats = [];
+            for (let s = startSeat; s <= endSeat; s++) {
+                const seatId = `${bloque}-${s}`;
+                if (allStudentsMap[seatId]) {
+                    const pos = s - startSeat + 1;
+                    regularSeats.push({ value: pos, label: `Pos. ${pos} (${seatId})` });
+                }
+            }
+
+            // Reconstruir select de posiciones
+            posicionEl.innerHTML = '<option value="">-- posición en fila --</option>';
+            regularSeats.forEach(({ value, label }) => {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = label;
+                posicionEl.appendChild(opt);
+            });
+
+            const posicion = parseInt(posicionEl.value);
+            if (!posicion) {
+                document.getElementById('extraPreview').textContent = '—';
+                return;
+            }
+
+            const asientoBase = calcAbsoluteSeat(filaNum, posicion);
+            const suffix = determineExtraSuffix(bloque, filaNum, asientoBase);
+
+            if (!suffix) {
+                document.getElementById('extraPreview').textContent = '⚠ Fila llena (máx. 2 extras)';
+            } else {
+                document.getElementById('extraPreview').textContent = `${bloque}-${suffix}`;
+            }
+        }
+
+        // Listener para recalcular al cambiar posición
+        document.getElementById('extraPosicion').addEventListener('change', updateExtraPreview);
+
+        async function submitExtraStudent() {
+            const codigo = document.getElementById('extraCodigo').value.trim();
+            const nombres = document.getElementById('extraNombres').value.trim();
+            const apellidos = document.getElementById('extraApellidos').value.trim();
+            const carrera = document.getElementById('extraCarrera').value.trim();
+            const bloque = document.getElementById('extraBloque').value;
+            const filaNum = parseInt(document.getElementById('extraFila').value);
+            const posicion = parseInt(document.getElementById('extraPosicion').value);
+
+            const msgEl = document.getElementById('extraStudentMsg');
+            const btnEl = document.getElementById('extraSubmitBtn');
+
+            function showMsg(text, type) {
+                msgEl.textContent = text;
+                msgEl.className = `extra-modal-msg ${type}`;
+                msgEl.style.display = 'block';
+            }
+
+            if (!codigo || !nombres || !apellidos || !carrera) {
+                showMsg('Por favor completa todos los campos de datos del alumno.', 'error');
+                return;
+            }
+            if (!posicion) {
+                showMsg('Selecciona la posición en la fila donde insertar al alumno.', 'error');
+                return;
+            }
+
+            const asientoBase = calcAbsoluteSeat(filaNum, posicion);
+            const suffix = determineExtraSuffix(bloque, filaNum, asientoBase);
+            if (!suffix) {
+                showMsg(`La fila ${filaNum} del bloque ${bloque} ya tiene ${MAX_EXTRA_PER_ROW} alumnos extra (límite máximo).`, 'error');
+                return;
+            }
+
+            btnEl.disabled = true;
+            showMsg('Guardando...', '');
+
+            try {
+                const resp = await fetch('/api/students', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sheet: currentSheet,
+                        codigo,
+                        nombres,
+                        apellidos,
+                        carrera,
+                        bloque,
+                        fila: filaNum,
+                        asiento: suffix
+                    })
+                });
+                const result = await resp.json();
+                if (!resp.ok) {
+                    showMsg(result.error || 'Error al agregar alumno.', 'error');
+                    btnEl.disabled = false;
+                    return;
+                }
+                showMsg(`✓ Alumno agregado con asiento ${result.seat}`, 'success');
+                // Refrescar datos y cerrar modal tras 1.5 s
+                await loadValidSeats();
+                await loadLoggedUsers();
+                setTimeout(closeExtraStudentModal, 1500);
+            } catch (err) {
+                showMsg('Error de conexión. Inténtalo de nuevo.', 'error');
+                btnEl.disabled = false;
+                console.error(err);
+            }
+        }
+
         // ===== Inicializar =====
-        createAllBlockGrids();
         loadAvailableDates(); // Carga eventos, selecciona el de hoy, y llama loadLoggedUsers() + connectSSE()
         toggleAutoRefresh();
     </script>

@@ -1578,7 +1578,8 @@
                 }
             }
 
-            // Reconstruir select de posiciones
+            // Reconstruir select de posiciones, preservando la selección actual
+            const savedValue = posicionEl.value;
             posicionEl.innerHTML = '<option value="">-- posición en fila --</option>';
             regularSeats.forEach(({ value, label }) => {
                 const opt = document.createElement('option');
@@ -1586,6 +1587,7 @@
                 opt.textContent = label;
                 posicionEl.appendChild(opt);
             });
+            posicionEl.value = savedValue;
 
             const posicion = parseInt(posicionEl.value);
             if (!posicion) {
@@ -1602,9 +1604,6 @@
                 document.getElementById('extraPreview').textContent = `${bloque}-${suffix}`;
             }
         }
-
-        // Listener para recalcular al cambiar posición
-        document.getElementById('extraPosicion').addEventListener('change', updateExtraPreview);
 
         async function submitExtraStudent() {
             const codigo = document.getElementById('extraCodigo').value.trim();

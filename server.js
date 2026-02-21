@@ -66,14 +66,14 @@ async function fetchStudents(sheetName) {
         const code = (codigo || '').trim().toLowerCase();
         if (!code) continue;
 
-        const seatNumber = parseInt(asiento, 10);
+        const asientoStr = (asiento || '').trim();
         const rowNumber = parseInt(fila, 10);
 
         students[code] = {
             name: `${(nombres || '').trim()} ${(apellidos || '').trim()}`,
-            seat: `${(bloque || '').trim()}-${seatNumber}`,
+            seat: `${(bloque || '').trim()}-${asientoStr}`,
             block: (bloque || '').trim(),
-            seatNumber: seatNumber,
+            seatNumber: asientoStr,
             row: rowNumber,
             carrera: (carrera || '').trim(),
             sheetRow: i + 1 // fila real en la hoja (1-indexed, +1 por encabezado)
@@ -106,15 +106,15 @@ async function fetchAttendanceFromSheet(sheetName) {
         const code = (codigo || '').trim().toLowerCase();
         if (!code) continue;
 
-        const seatNumber = parseInt(asiento, 10);
+        const asientoStr = (asiento || '').trim();
         const rowNumber = parseInt(fila, 10);
 
         attendees.push({
             code,
             name: `${(nombres || '').trim()} ${(apellidos || '').trim()}`,
-            seat: `${(bloque || '').trim()}-${seatNumber}`,
+            seat: `${(bloque || '').trim()}-${asientoStr}`,
             block: (bloque || '').trim(),
-            seatNumber: seatNumber,
+            seatNumber: asientoStr,
             row: rowNumber,
             loginTime: asistencia.trim()
         });
@@ -259,6 +259,89 @@ app.get('/api/students', async (req, res) => {
         }
 
         res.status(500).json({ error: 'Error al cargar datos de alumnos desde Google Sheets' });
+    }
+});
+
+// API: Agregar alumno extra con asiento tipo "i" (ej: "3i", "3ii")
+app.post('/api/students', async (req, res) => {
+    try {
+        const { sheet, codigo, nombres, apellidos, carrera, bloque, fila, asiento } = req.body;
+
+        if (!sheet || !isValidSheet(sheet)) {
+            return res.status(400).json({ error: 'Campo sheet inválido. Use formato dd-mm-yyyy-G-E.' });
+        }
+        if (!codigo || !nombres || !apellidos || !carrera || !bloque || !fila || !asiento) {
+            return res.status(400).json({ error: 'Faltan campos requeridos: codigo, nombres, apellidos, carrera, bloque, fila, asiento.' });
+        }
+
+        // Validar que sea un asiento extra (formato: número seguido de "i" o "ii")
+        if (!/^\d+i{1,2}$/.test(String(asiento).trim())) {
+            return res.status(400).json({ error: 'El asiento debe tener formato de extra: ej. "3i" o "3ii".' });
+        }
+
+        // Validar que la hoja esté activa
+        const sheetInfo = parseSheetInfo(sheet);
+        if (!sheetInfo || !sheetInfo.active) {
+            return res.status(403).json({ error: 'La hoja de graduación no está activa.' });
+        }
+
+        const normalizedCode = String(codigo).trim().toLowerCase();
+        const bloqueStr = String(bloque).trim().toUpperCase();
+        const filaNum = parseInt(fila, 10);
+        const asientoStr = String(asiento).trim();
+        const newSeatId = `${bloqueStr}-${asientoStr}`;
+
+        // Cargar alumnos actuales para validaciones
+        const students = await fetchStudents(sheet);
+
+        // Verificar que el código no exista ya
+        if (students[normalizedCode]) {
+            return res.status(409).json({ error: `El código ${codigo} ya existe en esta hoja.` });
+        }
+
+        // Verificar que el seat ID no exista ya
+        const seatAlreadyExists = Object.values(students).some(s => s.seat === newSeatId);
+        if (seatAlreadyExists) {
+            return res.status(409).json({ error: `El asiento ${newSeatId} ya está asignado.` });
+        }
+
+        // Contar cuántos alumnos "i" hay en esa fila del bloque (límite: 2)
+        const extrasEnFila = Object.values(students).filter(s =>
+            s.block === bloqueStr &&
+            s.row === filaNum &&
+            /i+$/.test(String(s.seatNumber))
+        ).length;
+
+        if (extrasEnFila >= 2) {
+            return res.status(400).json({ error: `La fila ${filaNum} del bloque ${bloqueStr} ya tiene 2 alumnos extra (límite máximo).` });
+        }
+
+        // Agregar nueva fila al Google Sheet
+        const sheetsClient = getSheetsClient();
+        await sheetsClient.spreadsheets.values.append({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${sheet}!A:H`,
+            valueInputOption: 'USER_ENTERED',
+            insertDataOption: 'INSERT_ROWS',
+            requestBody: {
+                values: [[
+                    normalizedCode,
+                    String(nombres).trim(),
+                    String(apellidos).trim(),
+                    String(carrera).trim(),
+                    bloqueStr,
+                    filaNum,
+                    asientoStr,
+                    ''
+                ]]
+            }
+        });
+
+        console.log(`Alumno extra agregado (${sheet}): ${nombres} ${apellidos} -> ${newSeatId}`);
+        res.json({ success: true, seat: newSeatId });
+    } catch (error) {
+        console.error('Error al agregar alumno extra:', error);
+        res.status(500).json({ error: 'Error interno al agregar alumno extra.' });
     }
 });
 

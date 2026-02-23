@@ -629,6 +629,31 @@
         .extra-modal-msg.error { background: #fdecea; color: #c0392b; border: 1px solid #e74c3c; }
         .extra-modal-msg.success { background: #eafaf1; color: #1e8449; border: 1px solid #27ae60; }
 
+        .extra-success-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.96);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            z-index: 10;
+        }
+        .extra-success-content {
+            text-align: center;
+            color: #1e8449;
+            padding: 20px;
+        }
+        .extra-success-icon {
+            font-size: 3.5em;
+            margin-bottom: 12px;
+        }
+        .extra-success-text {
+            font-size: 1.1em;
+            font-weight: 700;
+            font-family: 'Arial', sans-serif;
+        }
+
         .extra-submit-btn {
             padding: 11px;
             background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
@@ -673,6 +698,7 @@
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             border: 3px solid #ff6b54;
+            position: relative;
         }
 
         .activation-modal-box h2 {
@@ -913,6 +939,12 @@
     <!-- Modal Agregar Alumno Extra -->
     <div id="extraStudentModal" class="activation-modal-overlay">
         <div class="activation-modal-box">
+            <div id="extraSuccessOverlay" class="extra-success-overlay" style="display:none">
+                <div class="extra-success-content">
+                    <div class="extra-success-icon">&#10003;</div>
+                    <div id="extraSuccessText" class="extra-success-text"></div>
+                </div>
+            </div>
             <h2>Agregar Alumno Extra</h2>
             <p class="modal-subtitle">
                 Se insertará un asiento tipo <strong>i</strong> en la fila indicada.<br>
@@ -1080,9 +1112,9 @@
                 }
                 select.value = currentSheet;
 
-                // Cargar datos del evento seleccionado
-                loadLoggedUsers();
-                loadValidSeats();
+                // Cargar datos del evento seleccionado (seats primero para evitar Infinity en ocupación)
+                await loadValidSeats();
+                await loadLoggedUsers();
                 reconnectSSE();
 
             } catch (error) {
@@ -1092,7 +1124,7 @@
         }
 
         // Cambio de evento en el selector
-        function onDateChanged() {
+        async function onDateChanged() {
             const select = document.getElementById('dateSelect');
             const statusEl = document.getElementById('dateStatus');
             currentSheet = select.value;
@@ -1107,9 +1139,9 @@
                 statusEl.style.color = '#666';
             }
 
-            // Recargar todo para el nuevo evento
-            loadLoggedUsers();
-            loadValidSeats();
+            // Recargar todo para el nuevo evento (seats primero para evitar Infinity en ocupación)
+            await loadValidSeats();
+            await loadLoggedUsers();
             reconnectSSE();
         }
 
@@ -1327,7 +1359,7 @@
             const totalSeats = validSeats.size;
             document.getElementById('totalLoggedIn').textContent = loggedUsers.length;
             document.getElementById('totalSeats').textContent = totalSeats;
-            const percentage = ((loggedUsers.length / totalSeats) * 100).toFixed(1);
+            const percentage = totalSeats > 0 ? ((loggedUsers.length / totalSeats) * 100).toFixed(1) : '0.0';
             document.getElementById('percentageOccupied').textContent = percentage + '%';
 
             // Actualizar lista de usuarios
@@ -1521,6 +1553,7 @@
             const msg = document.getElementById('extraStudentMsg');
             msg.style.display = 'none';
             msg.className = 'extra-modal-msg';
+            document.getElementById('extraSuccessOverlay').style.display = 'none';
             document.getElementById('extraSubmitBtn').disabled = false;
             updateExtraPreview();
             document.getElementById('extraStudentModal').classList.add('open');
@@ -1618,9 +1651,14 @@
             const btnEl = document.getElementById('extraSubmitBtn');
 
             function showMsg(text, type) {
-                msgEl.textContent = text;
-                msgEl.className = `extra-modal-msg ${type}`;
-                msgEl.style.display = 'block';
+                if (type === 'success') {
+                    document.getElementById('extraSuccessText').textContent = text;
+                    document.getElementById('extraSuccessOverlay').style.display = 'flex';
+                } else {
+                    msgEl.textContent = text;
+                    msgEl.className = `extra-modal-msg ${type}`;
+                    msgEl.style.display = 'block';
+                }
             }
 
             if (!codigo || !nombres || !apellidos || !carrera) {

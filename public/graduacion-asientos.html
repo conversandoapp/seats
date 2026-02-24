@@ -313,7 +313,7 @@
         .stage-and-blocks {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 8px;
             overflow-x: auto;
             padding: 10px 5px;
@@ -978,6 +978,25 @@
         }
 
         @media (max-width: 480px) {
+            .container {
+                padding: 20px 10px;
+            }
+
+            .venue-container {
+                padding: 10px 5px;
+            }
+
+            .block-item {
+                flex: 1;
+                min-width: 0;
+                max-width: none;
+            }
+
+            .stage {
+                flex: 1;
+                min-width: 0;
+            }
+
             input[type="text"] {
                 font-size: 1.6em;
                 padding: 22px 15px;
@@ -997,7 +1016,9 @@
             }
 
             .venue-legend {
-                gap: 15px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
             }
 
             .orientation-label {

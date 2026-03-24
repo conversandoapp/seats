@@ -1335,7 +1335,7 @@
             document.getElementById('seatAssignment').textContent = studentData.seat;
             document.getElementById('studentCodeDisplay').textContent = `Código: ${studentCode.toUpperCase()}`;
 
-            // Mostrar indicador de registro de asistencia
+            // Mostrar indicador de estado de asistencia
             const studentInfo = document.getElementById('studentInfo');
             let statusEl = document.getElementById('attendanceStatus');
             if (!statusEl) {
@@ -1343,38 +1343,45 @@
                 statusEl.id = 'attendanceStatus';
                 studentInfo.appendChild(statusEl);
             }
-            statusEl.style.cssText = 'color: #f0ad4e; font-size: 0.95em; margin-top: 8px;';
-            statusEl.textContent = 'Registrando asistencia...';
 
-            // Nombre de la hoja donde se encontró al alumno (viene del API de búsqueda)
+            // Nombre de la hoja y estado donde se encontró al alumno (viene del API de búsqueda)
             const sheetName = studentData.sheetName;
+            const sheetState = studentData.sheetState;
 
-            // Registrar asistencia en el servidor (con reintentos en backend)
-            // Se envía el nombre completo de la hoja para asegurar que se registre en la correcta
-            try {
-                const response = await fetch('/api/attendance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: studentCode, sheet: sheetName })
-                });
+            if (sheetState === 'C') {
+                // Estado Consulta: mostrar asiento pero NO registrar asistencia
+                statusEl.style.cssText = 'color: #f0ad4e; font-size: 0.95em; margin-top: 8px;';
+                statusEl.innerHTML = 'Tu asiento está reservado.<br><strong>La asistencia se registrará el día del evento.</strong>';
+            } else {
+                // Estado Activo: registrar asistencia normalmente
+                statusEl.style.cssText = 'color: #f0ad4e; font-size: 0.95em; margin-top: 8px;';
+                statusEl.textContent = 'Registrando asistencia...';
 
-                const result = await response.json();
+                try {
+                    const response = await fetch('/api/attendance', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code: studentCode, sheet: sheetName })
+                    });
 
-                if (result.success) {
-                    statusEl.style.color = '#5cb85c';
-                    statusEl.textContent = 'Asistencia registrada correctamente';
-                    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-                } else if (result.inactive) {
+                    const result = await response.json();
+
+                    if (result.success) {
+                        statusEl.style.color = '#5cb85c';
+                        statusEl.textContent = 'Asistencia registrada correctamente';
+                        setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+                    } else if (result.inactive) {
+                        statusEl.style.color = '#d9534f';
+                        statusEl.innerHTML = 'La fecha de graduación no está activa.<br><strong>No es posible registrar asistencia en este momento.</strong>';
+                    } else {
+                        statusEl.style.color = '#d9534f';
+                        statusEl.innerHTML = 'No se pudo registrar tu asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';
+                    }
+                } catch (error) {
+                    console.error('Error registrando asistencia:', error);
                     statusEl.style.color = '#d9534f';
-                    statusEl.innerHTML = 'La fecha de graduación no está activa.<br><strong>No es posible registrar asistencia en este momento.</strong>';
-                } else {
-                    statusEl.style.color = '#d9534f';
-                    statusEl.innerHTML = 'No se pudo registrar tu asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';
+                    statusEl.innerHTML = 'Error de conexión al registrar asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';
                 }
-            } catch (error) {
-                console.error('Error registrando asistencia:', error);
-                statusEl.style.color = '#d9534f';
-                statusEl.innerHTML = 'Error de conexión al registrar asistencia.<br><strong>Por favor, vuelve a loguearte.</strong>';
             }
 
             // Cargar todos los alumnos del sheet: asientos válidos + mapa para tooltips

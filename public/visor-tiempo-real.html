@@ -738,55 +738,28 @@
             margin-left: 10px;
         }
 
-        /* Toggle switch de evento */
-        .toggle-wrapper {
+        /* Botones de estado de evento (Inactivo / Consulta / Activo) */
+        .state-buttons {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            gap: 4px;
             flex-shrink: 0;
         }
-        .toggle-label-text {
-            font-size: 0.82em;
+        .state-btn {
+            font-size: 0.78em;
             font-weight: 600;
             font-family: 'Arial', sans-serif;
-            color: #555;
-            min-width: 50px;
-            text-align: right;
-            user-select: none;
-        }
-        .toggle-input {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            pointer-events: none;
-        }
-        .toggle-track {
-            position: relative;
-            display: inline-block;
-            width: 46px;
-            height: 24px;
-            border-radius: 12px;
-            background: #ccc;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: #f5f5f5;
+            color: #888;
             cursor: pointer;
-            transition: background 0.25s ease;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
         }
-        .toggle-track::after {
-            content: '';
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-            transition: transform 0.25s ease;
-        }
-        .toggle-input:checked + .toggle-track { background: #5cb85c; }
-        .toggle-input:checked + .toggle-track::after { transform: translateX(22px); }
-        .toggle-input:disabled + .toggle-track { opacity: 0.45; cursor: not-allowed; }
-        .toggle-input:focus-visible + .toggle-track { outline: 2px solid #ff6b54; outline-offset: 2px; }
+        .state-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .state-btn-D.state-btn-selected { background: #e0e0e0; color: #444; border-color: #aaa; }
+        .state-btn-C.state-btn-selected { background: #fff3cd; color: #856404; border-color: #ffc107; }
+        .state-btn-A.state-btn-selected { background: #d4edda; color: #155724; border-color: #5cb85c; }
 
         .modal-close-btn {
             margin-top: 20px;
@@ -928,8 +901,9 @@
         <div class="activation-modal-box">
             <h2>Gestión de Eventos de Graduación</h2>
             <p class="modal-subtitle">
-                Los eventos <strong>Activos</strong> son buscados por el portal del graduado.<br>
-                Los eventos <strong>Inactivos</strong> no aparecen en la búsqueda de alumnos.
+                <strong>Inactivo:</strong> el alumno no puede consultar su asiento.<br>
+                <strong>Consulta:</strong> el alumno ve su asiento pero no se registra asistencia.<br>
+                <strong>Activo:</strong> el alumno ve su asiento y se registra asistencia.
             </p>
             <div id="modalSheetList">Cargando...</div>
             <button class="modal-close-btn" onclick="closeActivationModal()">Cerrar</button>
@@ -1053,11 +1027,11 @@
             return new Date(yyyy, mm - 1, dd);
         }
 
-        // Parsear nombre de hoja dd-mm-yyyy-G-E
+        // Parsear nombre de hoja dd-mm-yyyy-G-E (E = A|C|D)
         function parseSheetInfo(name) {
-            const m = name.match(/^(\d{2}-\d{2}-\d{4})-([A-Z])-([AD])$/);
+            const m = name.match(/^(\d{2}-\d{2}-\d{4})-([A-Z])-([ADC])$/);
             if (!m) return null;
-            return { name, date: m[1], graduation: m[2], state: m[3], active: m[3] === 'A' };
+            return { name, date: m[1], graduation: m[2], state: m[3], active: m[3] === 'A', queryable: m[3] === 'A' || m[3] === 'C' };
         }
 
         // Cargar eventos de graduación disponibles desde el spreadsheet
@@ -1091,7 +1065,7 @@
                 sheets.forEach(s => {
                     const option = document.createElement('option');
                     option.value = s.name; // nombre completo como valor
-                    const estadoLabel = s.active ? 'Activo' : 'Inactivo';
+                    const estadoLabel = s.state === 'A' ? 'Activo' : s.state === 'C' ? 'Consulta' : 'Inactivo';
                     let label = `${s.date} — Grad ${s.graduation} (${estadoLabel})`;
                     if (s.date === today) label += ' · Hoy';
                     option.textContent = label;
@@ -1480,25 +1454,15 @@
                 });
 
                 list.innerHTML = sheets.map(s => {
-                    const switchId = `toggle-${s.name.replace(/[^a-zA-Z0-9]/g, '-')}`;
                     return `
                     <div class="modal-sheet-row">
                         <div class="modal-sheet-info">
                             <strong>${s.date} — Graduación ${s.graduation}</strong>
                         </div>
-                        <div class="toggle-wrapper">
-                            <span class="toggle-label-text">${s.active ? 'Activo' : 'Inactivo'}</span>
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    class="toggle-input"
-                                    id="${switchId}"
-                                    ${s.active ? 'checked' : ''}
-                                    aria-label="${s.active ? 'Desactivar' : 'Activar'} evento ${s.date} Graduación ${s.graduation}"
-                                    onchange="toggleSheetState('${s.name}', '${s.state}', this)"
-                                >
-                                <span class="toggle-track" aria-hidden="true"></span>
-                            </label>
+                        <div class="state-buttons">
+                            <button class="state-btn state-btn-D ${s.state === 'D' ? 'state-btn-selected' : ''}" onclick="setSheetState('${s.name}', 'D')" aria-label="Inactivo">Inactivo</button>
+                            <button class="state-btn state-btn-C ${s.state === 'C' ? 'state-btn-selected' : ''}" onclick="setSheetState('${s.name}', 'C')" aria-label="Consulta">Consulta</button>
+                            <button class="state-btn state-btn-A ${s.state === 'A' ? 'state-btn-selected' : ''}" onclick="setSheetState('${s.name}', 'A')" aria-label="Activo">Activo</button>
                         </div>
                     </div>`;
                 }).join('');
@@ -1508,9 +1472,10 @@
             }
         }
 
-        async function toggleSheetState(sheetName, currentState, inputEl) {
-            if (inputEl) inputEl.disabled = true;
-            const newState = currentState === 'A' ? 'D' : 'A';
+        async function setSheetState(sheetName, newState) {
+            // Deshabilitar todos los botones del grupo mientras se guarda
+            const allBtns = document.querySelectorAll('.state-btn');
+            allBtns.forEach(b => b.disabled = true);
             try {
                 const response = await fetch('/api/sheets/set-state', {
                     method: 'POST',
@@ -1519,18 +1484,17 @@
                 });
                 if (!response.ok) {
                     const err = await response.json();
-                    if (inputEl) { inputEl.checked = !inputEl.checked; inputEl.disabled = false; }
                     alert('Error al cambiar estado: ' + (err.error || 'Error desconocido'));
+                    allBtns.forEach(b => b.disabled = false);
                     return;
                 }
             } catch (err) {
-                if (inputEl) { inputEl.checked = !inputEl.checked; inputEl.disabled = false; }
                 alert('Error de conexión al cambiar estado del evento.');
                 console.error(err);
+                allBtns.forEach(b => b.disabled = false);
                 return;
             }
             // Refrescar lista del modal y dropdown principal
-            // (refreshModalList recrea el DOM, no es necesario re-habilitar inputEl)
             await refreshModalList();
             await loadAvailableDates();
         }

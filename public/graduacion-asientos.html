@@ -1351,7 +1351,7 @@
             if (sheetState === 'C') {
                 // Estado Consulta: mostrar asiento pero NO registrar asistencia
                 statusEl.style.cssText = 'color: #f0ad4e; font-size: 0.95em; margin-top: 8px;';
-                statusEl.innerHTML = 'Tu asiento está reservado.<br><strong>La asistencia se registrará el día del evento.</strong>';
+                statusEl.textContent = 'Se muestra información de tu asiento, recuerda que debes registrar asistencia el día de la ceremonia';
             } else {
                 // Estado Activo: registrar asistencia normalmente
                 statusEl.style.cssText = 'color: #f0ad4e; font-size: 0.95em; margin-top: 8px;';
@@ -1368,7 +1368,7 @@
 
                     if (result.success) {
                         statusEl.style.color = '#5cb85c';
-                        statusEl.textContent = 'Asistencia registrada correctamente';
+                        statusEl.textContent = 'Asistencia registrada';
                         setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
                     } else if (result.inactive) {
                         statusEl.style.color = '#d9534f';

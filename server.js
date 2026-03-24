@@ -12,21 +12,22 @@ const PORT = process.env.PORT || 3000;
 const SPREADSHEET_ID = '1MDNAmS98qoUlIJmrX2t2LyHV028J9iG7zoWNyRPJqCw';
 
 // Validar que un nombre de hoja tenga formato dd-mm-yyyy-G-E
-// G = letra de graduación (A, B, C, ...), E = estado (A=Activo, D=Desactivo)
+// G = letra de graduación (A, B, C, ...), E = estado (A=Activo, C=Consulta, D=Desactivo)
 function isValidSheet(sheetName) {
-    return /^\d{2}-\d{2}-\d{4}-[A-Z]-[AD]$/.test(sheetName);
+    return /^\d{2}-\d{2}-\d{4}-[A-Z]-[ADC]$/.test(sheetName);
 }
 
 // Extraer información estructurada del nombre de hoja
 function parseSheetInfo(sheetName) {
-    const m = sheetName.match(/^(\d{2}-\d{2}-\d{4})-([A-Z])-([AD])$/);
+    const m = sheetName.match(/^(\d{2}-\d{2}-\d{4})-([A-Z])-([ADC])$/);
     if (!m) return null;
     return {
         name: sheetName,
         date: m[1],
         graduation: m[2],
         state: m[3],
-        active: m[3] === 'A'
+        active: m[3] === 'A',        // Solo 'A' permite registrar asistencia
+        queryable: m[3] === 'A' || m[3] === 'C'  // 'A' y 'C' permiten consultar asiento
     };
 }
 
@@ -188,8 +189,8 @@ app.post('/api/sheets/set-state', async (req, res) => {
     try {
         const { sheetName, state } = req.body;
 
-        if (!sheetName || !isValidSheet(sheetName) || !['A', 'D'].includes(state)) {
-            return res.status(400).json({ error: 'Parámetros inválidos. Se requiere sheetName (dd-mm-yyyy-G-E) y state (A|D).' });
+        if (!sheetName || !isValidSheet(sheetName) || !['A', 'D', 'C'].includes(state)) {
+            return res.status(400).json({ error: 'Parámetros inválidos. Se requiere sheetName (dd-mm-yyyy-G-E) y state (A|C|D).' });
         }
 
         const info = parseSheetInfo(sheetName);
@@ -357,25 +358,25 @@ app.get('/api/students/:code', async (req, res) => {
             fields: 'sheets.properties.title'
         });
 
-        const activeSheets = meta.data.sheets
+        const queryableSheets = meta.data.sheets
             .map(s => s.properties.title)
             .filter(isValidSheet)
             .map(parseSheetInfo)
-            .filter(s => s.active);
+            .filter(s => s.queryable);
 
-        if (activeSheets.length === 0) {
+        if (queryableSheets.length === 0) {
             return res.status(404).json({
-                error: 'No hay ceremonias de graduación activas',
+                error: 'No hay ceremonias de graduación disponibles',
                 noSheet: true
             });
         }
 
-        // Buscar el alumno en cada hoja activa
-        for (const sheet of activeSheets) {
+        // Buscar el alumno en cada hoja consultable (estado A o C)
+        for (const sheet of queryableSheets) {
             try {
                 const students = await fetchStudents(sheet.name);
                 if (students[code]) {
-                    return res.json({ ...students[code], sheetName: sheet.name });
+                    return res.json({ ...students[code], sheetName: sheet.name, sheetState: sheet.state });
                 }
             } catch (sheetError) {
                 console.warn(`Error al leer hoja ${sheet.name}:`, sheetError.message);
